@@ -1,7 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import { pkdRouter, whisperRouter } from './routes';
-import { formatResponse, formatError, errorHandler } from './middlewares';
 
 const app = express();
 
@@ -22,25 +21,7 @@ app.use(function cors(req, res, next) {
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.use('/', pkdRouter);
-app.use('/', whisperRouter);
-
-app.use(formatResponse);
-
-app.use(function logError(err, req, res, next) {
-  console.error(
-    `${req.method}:${req.url}
-    ${JSON.stringify({ error: err.message })}
-    ${JSON.stringify({ errorStack: err.stack.split('\n') }, null, 1)}
-    ${JSON.stringify({ body: req.body })}
-    ${JSON.stringify({ params: req.params })}
-    ${JSON.stringify({ query: req.query })}
-  `,
-  );
-  next(err);
-});
-
-app.use(formatError);
-app.use(errorHandler);
+app.use('/pkd', pkdRouter);
+app.use('/whisper', whisperRouter);
 
 app.listen(80, '0.0.0.0', () => console.log('zkp OffChain RESTful API server started on ::: 80'));

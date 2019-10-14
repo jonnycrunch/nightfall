@@ -49,10 +49,11 @@ export class TokenApiService {
  * @param uri {String} Token name
  * @param S_A {String} Serial number of token
  * @param z_A {String} Token2 commitment
+ * @param sk_A {String} Secret key of Alice
  * @param receiver_name {String} Rceiver name
  * @param z_A_index {String} Token commitment index
  */
-  spendToken(A: string, uri: string, contractAddress: string, S_A: string, z_A: string, receiver_name: string, z_A_index: number) {
+  spendToken(A: string, uri: string, S_A: string, z_A: string, sk_A: string, receiver_name: string, z_A_index: number) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
@@ -60,8 +61,8 @@ export class TokenApiService {
     const body = {
       A,
       uri,
-      contractAddress,
       S_A,
+      sk_A,
       z_A,
       receiver_name,
       z_A_index
@@ -80,18 +81,19 @@ export class TokenApiService {
    * @param uri {String} Token name
    * @param S_A {String} Serial number of token
    * @param z_A {String} Token commitment
+   * @param Sk_A {String} Secret key of Alice
    * @param z_A_index {String} Token commitment index
    */
-  burnToken(A: string, uri: string, contractAddress: string, S_A: string, z_A: string, z_A_index: number, payTo: string) {
+  burnToken(A: string, uri: string, S_A: string, z_A: string, Sk_A: string, z_A_index: number, payTo: string) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
     const body = {
       A,
       uri,
-      contractAddress,
       S_A,
       z_A,
+      Sk_A,
       z_A_index,
       payTo
     };
@@ -107,11 +109,11 @@ export class TokenApiService {
  * @param pageNo {Number} Page number
  * @param limit {Number} Page limit
  */
-  getNFTCommitments(pageNo: number, limit: number) {
+  fetchTokens(pageNo: number, limit: number) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
-    let url = config.apiGateway.root + 'token?';
+    let url = config.database.root + 'token?';
 
     if (pageNo) {
       url += 'pageNo=' + pageNo + '&';
@@ -134,7 +136,7 @@ export class TokenApiService {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
-    const url = config.user.root + 'getAllRegisteredNames';
+    const url = config.offchain.root + 'pkd/names';
 
     return this.http
       .get(url, httpOptions)

@@ -10,15 +10,18 @@ rest api calls, and the heavy-lifitng token-zkp.js and zokrates.js.  It exists s
 import Web3 from 'web3';
 import contract from 'truffle-contract';
 import jsonfile from 'jsonfile';
-import utils from 'zkp-utils';
-import config from 'config';
+import Utils from 'zkp-utils';
+import { getProps } from './config';
 import zkp from './nf-token-zkp';
 import zokrates from './zokrates';
 import cv from './compute-vectors';
 import Element from './Element';
 
+const utils = Utils('/app/config/stats.json');
+const config = getProps();
 const web3 = new Web3(
-  Web3.givenProvider || new Web3.providers.HttpProvider(config.get('web3ProviderURL')),
+  Web3.givenProvider ||
+    new Web3.providers.HttpProvider(`${config.zkp.rpc.host}:${config.zkp.rpc.port}`),
 );
 
 const NFTokenShield = contract(jsonfile.readFileSync('./build/contracts/NFTokenShield.json'));
@@ -183,10 +186,13 @@ This function needs to be run *before* computing any proofs in order to deploy
 the necessary code to the docker container, after instantiating the same. It
 will be called automatically by computeProof if it detects tha there is no container
 being instantiated.
-@param {string} hostDir - the directory on the host to mount into the runContainerMounted
+@param {string} tar - the tar file containing all the code needed to compute the proof
 */
 async function setupComputeProof(hostDir) {
   container = await zokrates.runContainerMounted(hostDir);
+
+  console.log(`Container id: ${container.id}`);
+  console.log(`To connect to the container manually: 'docker exec -ti ${container.id} bash'`);
 }
 
 /**
@@ -198,15 +204,41 @@ you.
 @param {string} tar - the tar file containing all the code needed to compute the proof
 @returns {object} proof
 */
-async function computeProof(elements, hostDir) {
+async function computeProof(elements, hostDir, proofDescription) {
   if (container === undefined || container === null) await setupComputeProof(hostDir);
-
-  console.log(`Container id: ${container.id}`);
-  console.log(`To connect to the container manually: 'docker exec -ti ${container.id} bash'`);
-
+  let timeEst;
+  let startTime;
+  let endTime;
+  let duration;
+  if (proofDescription) {
+    timeEst = await utils.getTimeEst(proofDescription, 'computeWitness');
+    startTime = new Date();
+    setTimeout(() => {
+      utils.progressBar(timeEst);
+    }, 1000);
+  }
   await zokrates.computeWitness(container, cv.computeVectors(elements), hostDir);
+  if (proofDescription) {
+    await utils.stopProgressBar();
+    endTime = new Date();
+    duration = endTime - startTime;
+    utils.updateTimeEst(proofDescription, 'computeWitness', duration);
+  }
 
+  if (proofDescription) {
+    timeEst = await utils.getTimeEst(proofDescription, 'generateProof');
+    startTime = new Date();
+    setTimeout(() => {
+      utils.progressBar(timeEst);
+    }, 1000);
+  }
   const proof = await zokrates.generateProof(container, undefined, hostDir);
+  if (proofDescription) {
+    await utils.stopProgressBar();
+    endTime = new Date();
+    duration = endTime - startTime;
+    utils.updateTimeEst(proofDescription, 'generateProof', duration);
+  }
 
   console.group(`Proof: ${JSON.stringify(proof, undefined, 2)}`);
   console.groupEnd();
@@ -251,25 +283,22 @@ async function mint(A, pk_A, S_A, account) {
   const { vkId } = vkIds.MintToken;
 
   // Calculate new arguments for the proof:
-  const z_A = utils.concatenateThenHash(utils.strip0x(A).slice(-32 * 2), pk_A, S_A);
+  const z_A = utils.recursiveHashConcat(utils.strip0x(A).slice(-config.HASHLENGTH * 2), pk_A, S_A);
 
   // Summarise values in the console:
   console.group('Existing Proof Variables:');
-  const p = config.ZOKRATES_PACKING_SIZE; // packing size in bits
-  const pt = Math.ceil((config.INPUTS_HASHLENGTH * 8) / config.ZOKRATES_PACKING_SIZE); // packets in bits
-  console.log('A:', A, ' : ', utils.hexToFieldPreserve(A, p, pt));
-  console.log('pk_A:', pk_A, ' : ', utils.hexToFieldPreserve(pk_A, p, pt));
-  console.log('S_A:', S_A, ' : ', utils.hexToFieldPreserve(S_A, p, pt));
+  const p = config.ZOKRATES_PACKING_SIZE;
+  const pt = Math.ceil((config.HASHLENGTH * 8) / config.ZOKRATES_PACKING_SIZE);
+  console.log('A: ', A, ' : ', utils.hexToFieldPreserve(A, p, pt));
+  console.log('pk_A: ', pk_A, ' : ', utils.hexToFieldPreserve(pk_A, p, pt));
+  console.log('S_A: ', S_A, ' : ', utils.hexToFieldPreserve(S_A, p, pt));
   console.groupEnd();
 
   console.group('New Proof Variables:');
-  console.log('z_A:', z_A, ' : ', utils.hexToFieldPreserve(z_A, p, pt));
+  console.log('z_A: ', z_A, ' : ', utils.hexToFieldPreserve(z_A, p, pt));
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(A, z_A);
-  console.log('publicInputHash:', publicInputHash);
-
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = cv.computeVectors([new Element(A, 'field'), new Element(z_A, 'field')]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -284,13 +313,13 @@ async function mint(A, pk_A, S_A, account) {
   console.group('Computing proof with w=[pk_A,S_A] x=[A,z_A,1]');
   let proof = await computeProof(
     [
-      new Element(publicInputHash, 'field', 248, 1),
       new Element(A, 'field'),
       new Element(pk_A, 'field'),
       new Element(S_A, 'field'),
       new Element(z_A, 'field'),
     ],
     hostDir,
+    'MintToken',
   );
 
   proof = Object.values(proof);
@@ -304,10 +333,12 @@ async function mint(A, pk_A, S_A, account) {
   const registry = await verifier.getRegistry();
   console.log('Check that a registry has actually been registered:', registry);
 
-  // make token shield contract an approver to transfer this token on behalf of the owner (to comply with the standard as msg.sender has to be owner or approver)
+  // make token shield contract an approver to transfer this token on behalf of the owner
+  // (to comply with the standard as msg.sender has to be owner or approver)
   await addApproverNFToken(nfTokenShield.address, A, account);
-  // with the pre-compute done we can mint the token, which is now a reasonably light-weight calculation
-  const z_A_index = await zkp.mint(proof, inputs, vkId, A, z_A, account, nfTokenShield);
+  // with the pre-compute done we can mint the token, which is now a reasonably
+  // light-weight calculation
+  const z_A_index = await zkp.mint(proof, inputs, vkId, account, nfTokenShield);
 
   console.log('Mint output: [z_A, z_A_index]:', z_A, z_A_index.toString());
   console.log('MINT COMPLETE\n');
@@ -357,23 +388,18 @@ async function transfer(A, pk_B, S_A, S_B, sk_A, z_A, z_A_index, account) {
   console.log(`Merkle Root: ${root}`);
 
   // Calculate new arguments for the proof:
-  const n = utils.concatenateThenHash(S_A, sk_A);
-  const z_B = utils.concatenateThenHash(
-    utils.strip0x(A).slice(-config.INPUTS_HASHLENGTH * 2),
-    pk_B,
-    S_B,
-  );
+  const n = utils.recursiveHashConcat(S_A, sk_A);
+  if (n !== utils.hashConcat(S_A, sk_A))
+    throw new Error(`hashConcat and recursiveHashConcat didn't agree`);
+  const z_B = utils.recursiveHashConcat(utils.strip0x(A).slice(-config.HASHLENGTH * 2), pk_B, S_B);
 
   // we need the Merkle path from the token commitment to the root, expressed as Elements
   const path = await cv.computePath(account, nfTokenShield, z_A, z_A_index).then(result => {
     return {
-      elements: result.path.map(
-        element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
-      ),
-      positions: new Element(result.positions, 'field', 128, 1),
+      elements: result.path.map(element => new Element(element, 'field', 2)),
+      positions: new Element(result.positions, 'field', 1),
     };
   });
-
   // check the path and root match:
   if (path.elements[0].hex !== root) {
     throw new Error(`Root inequality: sister-path[0]=${path.elements[0].hex} root=${root}`);
@@ -382,7 +408,7 @@ async function transfer(A, pk_B, S_A, S_B, sk_A, z_A, z_A_index, account) {
   // Summarise values in the console:
   console.group('Existing Proof Variables:');
   const p = config.ZOKRATES_PACKING_SIZE;
-  const pt = Math.ceil((config.INPUTS_HASHLENGTH * 8) / config.ZOKRATES_PACKING_SIZE);
+  const pt = Math.ceil((config.HASHLENGTH * 8) / config.ZOKRATES_PACKING_SIZE);
   console.log('A: ', A, ' : ', utils.hexToFieldPreserve(A, p, pt));
   console.log('S_A: ', S_A, ' : ', utils.hexToFieldPreserve(S_A, p, pt));
   console.log('S_B: ', S_B, ' : ', utils.hexToFieldPreserve(S_B, p, pt));
@@ -394,13 +420,14 @@ async function transfer(A, pk_B, S_A, S_B, sk_A, z_A, z_A_index, account) {
   console.group('New Proof Variables:');
   console.log('n: ', n, ' : ', utils.hexToFieldPreserve(n, p, pt));
   console.log('z_B: ', z_B, ' : ', utils.hexToFieldPreserve(z_B, p, pt));
-  console.log('root: ', root, ' : ', utils.hexToFieldPreserve(root, p));
+  console.log('root: ', root, ' : ', utils.hexToFieldPreserve(root, p, pt));
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(root, n, z_B);
-  console.log('publicInputHash:', publicInputHash);
-
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = cv.computeVectors([
+    new Element(n, 'field'),
+    new Element(root, 'field'),
+    new Element(z_B, 'field'),
+  ]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -415,7 +442,6 @@ async function transfer(A, pk_B, S_A, S_B, sk_A, z_A, z_A_index, account) {
   console.group('Computing proof with w=[A,path[],pk_B,S_A,S_B,sk_A]  x=[n,root,z_B,1]');
   let proof = await computeProof(
     [
-      new Element(publicInputHash, 'field', 248, 1),
       new Element(A, 'field'),
       ...path.elements.slice(1),
       path.positions,
@@ -424,10 +450,11 @@ async function transfer(A, pk_B, S_A, S_B, sk_A, z_A, z_A_index, account) {
       new Element(S_A, 'field'),
       new Element(S_B, 'field'),
       new Element(sk_A, 'field'),
-      new Element(root, 'field'),
+      path.elements[0],
       new Element(z_B, 'field'),
     ],
     hostDir,
+    'TransferToken',
   );
 
   proof = Object.values(proof);
@@ -438,20 +465,10 @@ async function transfer(A, pk_B, S_A, S_B, sk_A, z_A, z_A_index, account) {
   console.groupEnd();
 
   // send the token to Bob by transforming the commitment
-  const [z_B_index, txObj] = await zkp.transfer(
-    proof,
-    inputs,
-    vkId,
-    root,
-    n,
-    z_B,
-    account,
-    nfTokenShield,
-  );
+  const [z_B_index, txObj] = await zkp.transfer(proof, inputs, vkId, account, nfTokenShield);
 
   console.log('TRANSFER COMPLETE\n');
   console.groupEnd();
-
   return {
     z_B,
     z_B_index,
@@ -497,15 +514,14 @@ async function burn(A, Sk_A, S_A, z_A, z_A_index, account, payTo) {
   console.log(`Merkle Root: ${root}`);
 
   // Calculate new arguments for the proof:
-  const Na = utils.concatenateThenHash(S_A, Sk_A);
-
-  // we need the Merkle path from the token commitment to the root, expressed as Elements
+  const Na = utils.recursiveHashConcat(S_A, Sk_A);
+  if (Na !== utils.hashConcat(S_A, Sk_A))
+    throw new Error(`hashConcat and recursiveHashConcat didn't agree`);
+  const Pk_A = utils.recursiveHashConcat(Sk_A);
   const path = await cv.computePath(account, nfTokenShield, z_A, z_A_index).then(result => {
     return {
-      elements: result.path.map(
-        element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
-      ),
-      positions: new Element(result.positions, 'field', 128, 1),
+      elements: result.path.map(element => new Element(element, 'field', 2)),
+      positions: new Element(result.positions, 'field', 1),
     };
   });
 
@@ -517,25 +533,25 @@ async function burn(A, Sk_A, S_A, z_A, z_A_index, account, payTo) {
   // Summarise values in the console:
   console.group('Existing Proof Variables:');
   const p = config.ZOKRATES_PACKING_SIZE;
-  const pt = Math.ceil((config.INPUTS_HASHLENGTH * 8) / config.ZOKRATES_PACKING_SIZE);
+  const pt = Math.ceil((config.HASHLENGTH * 8) / config.ZOKRATES_PACKING_SIZE);
   console.log(`A: ${A} : ${utils.hexToFieldPreserve(A, p, pt)}`);
   console.log(`sk_A: ${Sk_A} : ${utils.hexToFieldPreserve(Sk_A, p, pt)}`);
+  console.log(`Pk_A: ${Pk_A} : ${utils.hexToFieldPreserve(Pk_A, p, pt)}`);
   console.log(`S_A: ${S_A} : ${utils.hexToFieldPreserve(S_A, p, pt)}`);
   console.log(`z_A: ${z_A} : ${utils.hexToFieldPreserve(z_A, p, pt)}`);
-  console.log(`payTo: ${payToOrDefault}`);
-  const payToLeftPadded = utils.leftPadHex(payToOrDefault, config.INPUTS_HASHLENGTH * 2); // left-pad the payToAddress with 0's to fill all 256 bits (64 octets) (so the sha256 function is hashing the same thing as inside the zokrates proof)
-  console.log(`payToLeftPadded: ${payToLeftPadded}`);
+  console.log(`payTo: ${payToOrDefault} : ${utils.hexToFieldPreserve(payToOrDefault, p, pt)}`);
   console.groupEnd();
-
   console.group('New Proof Variables:');
   console.log(`Na: ${Na} : ${utils.hexToFieldPreserve(Na, p, pt)}`);
   console.log(`root: ${root} : ${utils.hexToFieldPreserve(root, p, pt)}`);
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(root, Na, A, payToLeftPadded); // notice we're using the version of payTo which has been padded to 256-bits; to match our derivation of publicInputHash within our zokrates proof.
-  console.log('publicInputHash:', publicInputHash);
-
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = cv.computeVectors([
+    new Element(payTo, 'field'),
+    new Element(A, 'field'),
+    new Element(Na, 'field'),
+    new Element(root, 'field'),
+  ]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -550,7 +566,6 @@ async function burn(A, Sk_A, S_A, z_A, z_A_index, account, payTo) {
   console.group('Computing proof with w=[sk_A,S_A,path[],order] x=[A,Na,root,1]');
   let proof = await computeProof(
     [
-      new Element(publicInputHash, 'field', 248, 1),
       new Element(payTo, 'field'),
       new Element(A, 'field'),
       new Element(Sk_A, 'field'),
@@ -561,6 +576,7 @@ async function burn(A, Sk_A, S_A, z_A, z_A_index, account, payTo) {
       new Element(root, 'field'),
     ],
     hostDir,
+    'BurnToken',
   );
 
   proof = Object.values(proof);
@@ -572,7 +588,7 @@ async function burn(A, Sk_A, S_A, z_A, z_A_index, account, payTo) {
 
   // with the pre-compute done we can burn the token, which is now a reasonably
   // light-weight calculation
-  await zkp.burn(proof, inputs, vkId, root, Na, A, payTo, account, nfTokenShield);
+  await zkp.burn(proof, inputs, vkId, account, nfTokenShield);
 
   console.log('BURN COMPLETE\n');
   console.groupEnd();

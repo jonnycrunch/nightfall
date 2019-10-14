@@ -49,7 +49,7 @@ export class SpendCoinComponent implements OnInit , AfterContentInit {
   users: any;
 
   /**
-   * Name of the receiver
+   * Name of the transferee
    */
   receiverName: string;
 
@@ -92,7 +92,8 @@ export class SpendCoinComponent implements OnInit , AfterContentInit {
   fetchCoins () {
     this.transactions = null;
     this.isRequesting = true;
-    this.coinApiService.fetchCoins()
+    const address = localStorage.getItem('address');
+    this.coinApiService.fetchCoins(address)
       .subscribe(
         (data) => {
         this.isRequesting = false;
@@ -164,11 +165,12 @@ export class SpendCoinComponent implements OnInit , AfterContentInit {
       coin2['coin_commitment_index'],
       coin1['coin_commitment'],
       coin2['coin_commitment'],
+      localStorage.getItem('secretkey'),
       localStorage.getItem('publickey'),
       this.receiverName
     ).subscribe( data => {
         this.isRequesting = false;
-        this.toastr.success('Transfer to Receiver ' + this.receiverName);
+        this.toastr.success('Transfer to Recipient ' + this.receiverName);
         transactions.splice(Number(coin1['id']), 1);
         transactions.splice(Number(coin2['id']) - 1, 1);
         this.fetchCoins();

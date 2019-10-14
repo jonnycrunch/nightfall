@@ -9,13 +9,16 @@ import Web3 from 'web3';
 import contract from 'truffle-contract';
 import jsonfile from 'jsonfile';
 import fs from 'fs';
-import utils from 'zkp-utils';
-import config from 'config';
+import Utils from 'zkp-utils';
+import { getProps } from './config';
 import nfZkp from './nf-token-zkp';
 import fZkp from './f-token-zkp';
 
+const utils = Utils('/app/config/stats.json');
+const config = getProps();
 const web3 = new Web3(
-  Web3.givenProvider || new Web3.providers.HttpProvider(config.get('web3ProviderURL')),
+  Web3.givenProvider ||
+    new Web3.providers.HttpProvider(`${config.zkp.rpc.host}:${config.zkp.rpc.port}`),
 );
 
 const NFtokenShield = contract(jsonfile.readFileSync('./build/contracts/NFTokenShield.json'));
@@ -131,11 +134,16 @@ async function vkController() {
   await loadVk(config.NFT_MINT_VK, 'MintToken', account);
   await loadVk(config.NFT_TRANSFER_VK, 'TransferToken', account);
   await loadVk(config.NFT_BURN_VK, 'BurnToken', account);
-
-  await loadVk(config.FT_MINT_VK, 'MintCoin', account);
-  await loadVk(config.FT_TRANSFER_VK, 'TransferCoin', account);
-  await loadVk(config.FT_BURN_VK, 'BurnCoin', account);
-
+  // we either use KYC or ordinary - never mixed
+  if (config.KYC) {
+    await loadVk(config.FT_KYC_MINT_VK, 'MintCoin', account);
+    await loadVk(config.FT_KYC_TRANSFER_VK, 'TransferCoin', account);
+    await loadVk(config.FT_KYC_BURN_VK, 'BurnCoin', account);
+  } else {
+    await loadVk(config.FT_MINT_VK, 'MintCoin', account);
+    await loadVk(config.FT_TRANSFER_VK, 'TransferCoin', account);
+    await loadVk(config.FT_BURN_VK, 'BurnCoin', account);
+  }
   await setVkIds(account);
 
   console.log('VK setup complete');

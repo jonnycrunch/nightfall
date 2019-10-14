@@ -1,0 +1,268 @@
+import "hashes/sha256/512bit.code" as sha256compression
+import "utils/pack/unpack128.code" as unpack128
+import "ecc/babyjubjubParams.code" as curveParams
+import "ecc/edwardsScalarMult.code" as scalarMult
+import "ecc/edwardsAdd.code" as add
+import "utils/pack/nonStrictUnpack256.code" as unpack256
+import "./curve-points.code" as curvePoints
+import "ecc/edwardsCompress.code" as edwardsCompress
+
+
+def CONCAT128x216x216(field[128] a, field[216] b, field[216] c)->(field[560]):
+	return [...a, ...b, ...c]
+
+def CONCAT216x216(field[216] a, field[216] b)->(field[432]):
+	return [...a, ...b]
+
+def ORDEREDCONCAT216x216(field order, field[216] f, field[216] g)->(field[432]):
+	field[216] r = if order==0 then g else f fi
+	field[216] s = if order==0 then f else g fi
+	return [...r, ...s]
+
+def shaPad432To512(field[432] a)->(field[512]):
+	return [...a, 1, 70....0, 1,1,0,1,1,0,0,0,0]
+
+def shaPad216To512(field[216] a)->(field[512]):
+	return [...a, 1, 287....0, 1,1,0,1,1,0,0,0]
+
+def shaPad128To512(field[128] a)->(field[512]):
+	return [...a, 1, 375....0, 1,0,0,0,0,0,0,0]
+
+// This function encrypts c, pkA and Sc (so that the authority can recover them)
+def enc2(field[128] c, field[2] pkA, field[2] gu, field[2] gv, field[10] cp, field[2] y1, field[2] y2, field[256]r )->(field[6]):
+
+	//TODO - test if this array extension is needed:
+	field[256] C = [...[0;128], ...c] //convert the 128 bit currency to 256 bit for scalar multiplication
+
+	//y1.r and y2.r
+	field[2] y1r = scalarMult(r, y1, cp)
+	field[2] y2r = scalarMult(r, y2, cp)
+
+	//these are the elements that make up the encryption
+	field[2] c0 = scalarMult(r, gu, cp ) // = g.r
+	field[2] c1 = add(scalarMult(C, gv, curveParams()), y1r, curveParams() )
+	field[2] c2 = add(pkA, y2r, curveParams() )
+
+	return [...c0, ...c1, ...c2]
+
+//this function computes a pedersen hash followed by a sha hash for extra safety
+def hash(field[128] c, field[2] Pk, field[256] S, field[20] g, field[10] cp)->(field[256]):
+	field[256] C = [...[0;128], ...c] //convert the 128 bit currency to 256 bit for scalar multiplication
+	field[256] Pkx = unpack256(Pk[0])
+	field[256] Pky = unpack256(Pk[1])
+	field[2] ped = add(add(scalarMult(C,[g[4],g[5]],cp),scalarMult(Pkx,[g[6],g[7]],cp),cp), add(scalarMult(S,[g[8],g[9]],cp),scalarMult(Pky,[g[10],g[11]],cp),cp),cp)
+	field[256] com = edwardsCompress(ped, cp)
+	field[512] q = shaPad216To512(com[40..256])
+	return sha256compression(q[0..256],q[256..512])
+
+
+//inputs for main are:
+//Alice's original coins are C and D
+
+// C, the amount contained in coin z_C (private)
+// SkA Alice's secret key (private)
+// Sc the serial number for coin z_C (private)
+// c0b-c7b - the Merkle path for C (private)
+
+// D, the amount contained in coin z_d (private)
+// Sd the serial number for coin z_d (private)
+// d0b-d7b - the Merkle path for D (private)
+
+//Nc the nullifier for C (public)
+//Nd the nullifier for D (public)
+
+// Alice's new coins
+// E, the amount in coin z_e (private)
+// PkB Bob's public key (private)
+// Se the serial number for coin E (private)
+// Ze the z-coin (commitment) corresponding to E (public)
+
+// F, the amount in coin f_e (private)
+// Sf the serial number for coin F (private)
+// Zf the z-coin (commitment) corresponding to F (public)
+
+// R - the Merkle root (public)
+
+// y1 one of the master public keys
+// y2 the other master public key
+// x randomly chosen field element
+
+// Note - We truncate the 256 bit SHA hash down to 216 bits to make it fit better with our sha, which can only handle a single round.
+
+//Each field element passed to main() can be at most 128bits, to make use of unpack128() so 216 bit variables span two fields
+
+def main(private field pC, 'field' £pSkA1...0, 'field' £pSc1...0, @[private field c*bh, private field c*bl]0...31, private field pOrderC, private field pD, 'field' £pSd1...0, @[private field d*bh, private field d*bl]0...31, private field pOrderD, 'field' pNc1...0, 'field' pNd1...0, private field pE, 'field' £pPkB1...0, 'field' £pSe1...0, 'field' pZe1...0, private field pF, 'field' £pSf1...0, 'field' pZf1...0, 'field' pR1...0, field[2] y1, field[2] y2, 'field' £pre1...0, 'field' £prf1...0, field[2] CE0, field[2] CE1, field[2] CE2, field[2] CF0 ,field[2] CF1, field[2] CF2)->(field1):
+
+//Unpack the inputs of main() to 128 bits. We'll unpack each field to its own 128 bit string for simplicity for now. Later efficiencies could be made by grouping some inputs.
+
+	field[128] C = unpack128(pC)
+
+	field[128] SkA1 = unpack128(pSkA1)
+	field[128] SkA0 = unpack128(pSkA0)
+	field[256] SkA = [...SkA1, ...SkA0]
+
+	field[128] Sc1 = unpack128(pSc1) //this slightly long-winded approach needed so Zokrates can flatten the expressions
+	field[128] Sc0 = unpack128(pSc0)
+	field[256] Sc = [...Sc1, ...Sc0]
+
+	{field[128] c*b1 = unpack128(c*bh)}31...0
+	{field[128] c*b0 = unpack128(c*bl)}31...0
+	{field[256] c*b = [...c*b1, ...c*b0]}31...0
+
+	field[128] D = unpack128(pD)
+
+	field[128] Sd1 = unpack128(pSd1)
+	field[128] Sd0 = unpack128(pSd0)
+	field[256] Sd = [...Sd1, ...Sd0]
+
+	{field[128] d*b1 = unpack128(d*bh)}31...0
+	{field[128] d*b0 = unpack128(d*bl)}31...0
+	{field[256] d*b = [...d*b1, ...d*b0]}31...0
+
+	field[128] Nc1 = unpack128(pNc1)
+	field[128] Nc0 = unpack128(pNc0)
+	field[256] Nc = [...Nc1, ...Nc0]
+
+	field[128] Nd1 = unpack128(pNd1)
+	field[128] Nd0 = unpack128(pNd0)
+	field[256] Nd = [...Nd1, ...Nd0]
+
+	field[128] E = unpack128(pE)
+
+	field[2] PkB = [pPkB1, pPkB0]
+
+	field[128] Se1 = unpack128(pSe1)
+	field[128] Se0 = unpack128(pSe0)
+	field[256] Se = [...Se1, ...Se0]
+
+	field[128] Ze1 = unpack128(pZe1)
+	field[128] Ze0 = unpack128(pZe0)
+	field[256] Ze = [...Ze1, ...Ze0]
+
+	field[128] F = unpack128(pF)
+
+	field[128] Sf1 = unpack128(pSf1)
+	field[128] Sf0 = unpack128(pSf0)
+	field[256] Sf = [...Sf1,...Sf0]
+
+	field[128] Zf1 = unpack128(pZf1)
+	field[128] Zf0 = unpack128(pZf0)
+	field[256] Zf = [...Zf1, ...Zf0]
+
+	field[128] R1 = unpack128(pR1)
+	field[128] R0 = unpack128(pR0)
+	field[256] R = [...R1, ...R0]
+
+	field[128] orderC = unpack128(pOrderC)
+	field[128] orderD = unpack128(pOrderD)
+
+	field[128] re1 = unpack128(pre1)
+  field[128] re0 = unpack128(pre0)
+  field[256] re = [...re1, ...re0]
+
+	field[128] rf1 = unpack128(prf1)
+	field[128] rf0 = unpack128(prf0)
+	field[256] rf = [...rf1, ...rf0]
+
+//*************first we construct a proof that the nullifiers Nc and Nd are correct************
+	//concatenate Sc|Sk. The padding needs to be added to create a true hash
+
+		field[432] t = CONCAT216x216(Sc[40..256], SkA[40..256])
+		field[512] u = shaPad432To512(t)
+		field[256] nc = sha256compression(u[0..256],u[256..512])
+
+	//concatenate Sd|Sk. The padding needs to be added to create a true hash
+
+		t = CONCAT216x216(Sd[40..256], SkA[40..256])
+		u = shaPad432To512(t)
+		field[256] nd = sha256compression(u[0..256],u[256..512])
+
+// *********next, calculate Alice's public key from her private key: PkA = g.sha(SkA)
+	//first we need some babyjubjub curve information and a few points on the curve (taken from
+	//ZoKrates, so there's nothing up our sleeve)
+		field[10] cp = curveParams()
+		field[20] g = curvePoints()
+    field[2] gm = cp[4..6] // extract master key point from the babyjubjub curve parameters
+		field[2] gk = [g[0],g[1]]
+		field[2] gv = [g[2],g[3]]
+
+    field[2] PkA = scalarMult(SkA, gk, cp) // note PkA is an ec point
+
+//*************Prove that Zc and Zd are in the Merkle tree
+
+	// ***First calculate a hash of Zc.
+		field[256] s = hash(C, PkA, Sc, g, cp)
+
+		//concat 1st through 31st siblings
+		{t = ORDEREDCONCAT216x216(orderC[*], s[40..256], c*b[40..256])
+		u = shaPad432To512(t)
+		s = sha256compression(u[0..256],u[256..512])}31...1
+
+		// concat with the 32nd sibling. This should equal the root.
+		t = ORDEREDCONCAT216x216(orderC[0], s[40..256], c0b[40..256])
+		u = shaPad432To512(t)
+		field[256] rc = sha256compression(u[0..256],u[256..512])
+
+	// ***Next calculate Zd = H(D|PkA|S)
+		s = hash(D, PkA, Sd, g, cp)
+
+	//concat 1st through 31st siblings
+
+		{t = ORDEREDCONCAT216x216(orderD[*], s[40..256], d*b[40..256])
+		u = shaPad432To512(t)
+		s = sha256compression(u[0..256],u[256..512])}31...1
+
+	// concat with the 32nd sibling. This should equal the root.
+
+		t = ORDEREDCONCAT216x216(orderD[0], s[40..256], d0b[40..256])
+		u = shaPad432To512(t)
+		field[256] rd = sha256compression(u[0..256],u[256..512])
+
+
+//*************Next up - prove that E is in Ze and F is in Zf
+
+	//work out hash(ze) and the encryption of E,PkB,Se
+		field[256] ze = hash(E, PkB, Se, g, cp)
+		field[6] ce = enc2(E, PkB, gm, gv, cp, y1, y2, re)
+		field[2] ce0 = [ce[0], ce[1]]
+		field[2] ce1 = [ce[2], ce[3]]
+		field[2] ce2 = [ce[4], ce[5]]
+
+
+  //and zf
+		field[256] zf = hash(F, PkA, Sf, g, cp)
+		field[6] cf = enc2(F, PkA, gm, gv, cp, y1, y2, rf)
+		field[2] cf0 = [cf[0], cf[1]]
+		field[2] cf1 = [cf[2], cf[3]]
+		field[2] cf2 = [cf[4], cf[5]]
+
+//*************sum check C+D = E+F - we don't want anyone to create money.
+
+	field sumIn = pC + pD
+	field sumOut = pE + pF
+
+//*************Need to prove that Pk is in the whitelist**************
+
+  // TODO
+
+//**************Now test the proofs
+
+Nd[40..256] == nd[40..256]
+Nc[40..256] == nc[40..256]
+R[40..256] == rd[40..256]
+R[40..256] == rc[40..256]
+Ze[40..256] == ze[40..256]
+Zf[40..256] == zf[40..256]
+cf0 == CF0
+ce0 == CE0
+ce1 == CE1
+ce2 == CE2
+cf1 == CF1
+cf2 == CF2
+
+sumIn == sumOut
+C[0] == 0 //overflow prevention
+D[0] == 0
+E[0] == 0
+F[0] == 0
+return 1

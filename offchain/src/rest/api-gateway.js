@@ -1,7 +1,8 @@
 import request from 'request';
-import config from 'config';
+import { getProps } from '../config';
 
-const url = config.get('authenticationApi.url');
+const { authenticationApi } = getProps();
+const host = `${authenticationApi.host}:${authenticationApi.port}`;
 
 const requestWrapper = options =>
   new Promise(function promiseHandler(resolve, reject) {
@@ -16,7 +17,7 @@ const requestWrapper = options =>
 export default {
   checkCorrectnessCoin(headers, body) {
     const options = {
-      url: `${url}/coin/checkCorrectness`,
+      url: `${host}/coin/checkCorrectness`,
       method: 'POST',
       json: true,
       headers,
@@ -26,7 +27,7 @@ export default {
   },
   checkCorrectnessToken(headers, body) {
     const options = {
-      url: `${url}/token/checkCorrectness`,
+      url: `${host}/token/checkCorrectness`,
       method: 'POST',
       json: true,
       headers,
@@ -36,7 +37,7 @@ export default {
   },
   addNFTokenToDB(headers, body) {
     const options = {
-      url: `${url}/nft`,
+      url: `${host}/database/nft`,
       method: 'POST',
       json: true,
       headers,
@@ -46,7 +47,7 @@ export default {
   },
   addFTokenToDB(headers, body) {
     const options = {
-      url: `${url}/ft/transactions`,
+      url: `${host}/database/ft/transaction`,
       method: 'POST',
       json: true,
       headers,
@@ -56,7 +57,7 @@ export default {
   },
   addTokenCommitmentToDB(headers, body) {
     const options = {
-      url: `${url}/token`,
+      url: `${host}/database/token`,
       method: 'POST',
       json: true,
       headers,
@@ -66,7 +67,7 @@ export default {
   },
   addCoinCommitmentToDB(headers, body) {
     const options = {
-      url: `${url}/coin`,
+      url: `${host}/database/coin`,
       method: 'POST',
       json: true,
       headers,

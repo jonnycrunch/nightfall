@@ -4,6 +4,7 @@ import express from 'express';
 import {
   setZkpPublicKey,
   setWhisperPublicKey,
+  setPublicKeys,
   setName,
   getZkpPublicKeyFromName,
   getWhisperPublicKeyFromName,
@@ -12,118 +13,172 @@ import {
   getAddressFromName,
   isNameInUse,
 } from '../pkd-controller';
+import Response from '../../response'; // class for creating response object
 
 const router = express.Router();
 
-async function checkNameExistence(req, res, next) {
+router.get('/name/exists', async function(req, res) {
+  const response = Response();
   try {
-    res.data = await isNameInUse(req.query.name);
-    next();
+    const status = await isNameInUse(req.query.name);
+    response.statusCode = 200;
+    response.status = status;
+    res.json(response);
   } catch (err) {
-    next(err);
+    response.statusCode = 500;
+    response.err = { message: err.message };
+    res.status(500).json(response);
   }
-}
+});
 
-async function assignNameToAccount(req, res, next) {
-  const { name } = req.body;
+router
+  .route('/name')
+  .post(async function(req, res) {
+    const { name } = req.body;
+    const { address } = req.headers;
+    console.log(address, 'name post');
+    const response = Response();
+    try {
+      await setName(name, address);
+      response.statusCode = 200;
+      response.data = { message: 'Name Added.' };
+      res.json(response);
+    } catch (err) {
+      response.statusCode = 500;
+      response.err = { message: err.message };
+      res.status(500).json(response);
+    }
+  })
+  .get(async function(req, res) {
+    const { address } = req.headers;
+    console.log(address, 'name get');
+    const response = Response();
+    try {
+      const name = await getNameFromAddress(address);
+      response.statusCode = 200;
+      response.name = name;
+      res.json(response);
+    } catch (err) {
+      response.statusCode = 500;
+      response.err = { message: err.message };
+      res.status(500).json(response);
+    }
+  });
+
+router.post('/set-all-publickey', async function(req, res) {
+  const { pk, whisper_pk: whisperPk } = req.body;
   const { address } = req.headers;
+  const response = Response();
 
   try {
-    await setName(name, address);
-    res.data = { message: 'Name Added.' };
-    next();
+    await setPublicKeys([whisperPk, pk], address);
+    response.statusCode = 200;
+    response.data = { message: 'Keys Added.' };
+    res.json(response);
   } catch (err) {
-    next(err);
+    response.statusCode = 500;
+    response.err = { message: err.message };
+    res.status(500).json(response);
   }
-}
+});
 
-async function getNameForAccount(req, res, next) {
-  const { address } = req.headers;
+router
+  .route('/zkp-publickey')
+  .post(async function(req, res) {
+    const { pk } = req.body;
+    const { address } = req.headers;
+    const response = Response();
 
-  try {
-    res.data = await getNameFromAddress(address);
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
+    try {
+      await setZkpPublicKey(pk, address);
+      response.statusCode = 200;
+      response.data = { message: 'Keys Added.' };
+      res.json(response);
+    } catch (err) {
+      response.statusCode = 500;
+      response.err = { message: err.message };
+      res.status(500).json(response);
+    }
+  })
+  .get(async function(req, res) {
+    const { name } = req.query;
+    const response = Response();
 
-async function assignZkpPublicKeyToAccount(req, res, next) {
-  const { pk } = req.body;
-  const { address } = req.headers;
+    try {
+      const data = await getZkpPublicKeyFromName(name);
+      response.statusCode = 200;
+      response.pk = data;
+      res.json(response);
+    } catch (err) {
+      response.statusCode = 500;
+      response.err = { message: err.message };
+      res.status(500).json(response);
+    }
+  });
 
-  try {
-    await setZkpPublicKey(pk, address);
-    res.data = { message: 'Keys Added.' };
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
+router
+  .route('/whisperkey')
+  .post(async function(req, res) {
+    const { whisper_pk: whisperPk } = req.body;
+    const { address } = req.headers;
+    const response = Response();
 
-async function getZkpPublicKeyForAccountByName(req, res, next) {
+    try {
+      console.log(whisperPk, address);
+      await setWhisperPublicKey(whisperPk, address);
+      response.statusCode = 200;
+      response.data = { message: 'Keys Added.' };
+      res.json(response);
+    } catch (err) {
+      response.statusCode = 500;
+      response.err = { message: err.message };
+      res.status(500).json(response);
+    }
+  })
+  .get(async function(req, res) {
+    const { name } = req.query;
+    const response = Response();
+
+    try {
+      const data = await getWhisperPublicKeyFromName(name);
+      response.statusCode = 200;
+      response.user_whisper_pk = data;
+      res.json(response);
+    } catch (err) {
+      response.statusCode = 500;
+      response.err = { message: err.message };
+      res.status(500).json(response);
+    }
+  });
+
+router.get('/address', async function(req, res) {
   const { name } = req.query;
+  const response = Response();
 
   try {
-    res.data = await getZkpPublicKeyFromName(name);
-    next();
+    const data = await getAddressFromName(name);
+    response.statusCode = 200;
+    response.address = data;
+    res.json(response);
   } catch (err) {
-    next(err);
+    response.statusCode = 500;
+    response.err = { message: err.message };
+    res.status(500).json(response);
   }
-}
+});
 
-async function assignWhisperKeyToAccount(req, res, next) {
-  const { whisper_pk: whisperPk } = req.body;
-  const { address } = req.headers;
-
+router.get('/names', async function(req, res) {
+  const response = Response();
   try {
-    await setWhisperPublicKey(whisperPk, address);
-    res.data = { message: 'Keys Added.' };
-    next();
+    const data = await getNames();
+    response.statusCode = 200;
+    response.data = data;
+    res.json(response);
   } catch (err) {
-    next(err);
+    response.statusCode = 500;
+    response.err = { message: err.message };
+    res.status(500).json(response);
   }
-}
-
-async function getWhisperKeyForAccountByName(req, res, next) {
-  const { name } = req.query;
-
-  try {
-    res.data = await getWhisperPublicKeyFromName(name);
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
-
-async function getAllRegisteredAddresses(req, res, next) {
-  const { name } = req.query;
-
-  try {
-    res.data = await getAddressFromName(name);
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
-
-async function getAllRegisteredNames(req, res, next) {
-  try {
-    res.data = await getNames();
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
-
-router.get('/nameExists', checkNameExistence);
-router.get('/getAllRegisteredAddresses', getAllRegisteredAddresses);
-router.get('/getAllRegisteredNames', getAllRegisteredNames);
-router.post('/setNameToAccount', assignNameToAccount);
-router.get('/getNameForAccount', getNameForAccount);
-router.post('/setPublickeyToAddressInPKD', assignZkpPublicKeyToAccount);
-router.get('/getZkpPublicKeyForAccount', getZkpPublicKeyForAccountByName);
-router.post('/setWhisperKeyToAccount', assignWhisperKeyToAccount);
-router.get('/getWhisperKeyForAccount', getWhisperKeyForAccountByName);
+});
 
 export default router;

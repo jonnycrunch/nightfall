@@ -4,7 +4,7 @@
 Authors:
 */
 
-import utils from 'zkp-utils';
+import Utils from 'zkp-utils';
 
 import {
   isNameInUse,
@@ -24,6 +24,8 @@ import {
 } from '../src/pkd-controller';
 
 import AccountUtils from '../src/account-utils/account-utils';
+
+const utils = Utils('/app/config/stats.json');
 
 let whisperPublicKeyInput;
 let zkpPublicKeyInput;
@@ -103,7 +105,7 @@ describe('PKD Controller testing', () => {
   });
 
   test('ZKP public key can be set and retrieved using the ZKP public key to address association', async () => {
-    zkpPublicKeyInput = await utils.rndHex(32);
+    zkpPublicKeyInput = await utils.rndHex(27);
     const accounts = await AccountUtils.getEthAccounts();
     await setZkpPublicKey(zkpPublicKeyInput, accounts[0]);
     const zkpPublicKeyOutput = await getZkpPublicKeyFromAddress(accounts[0]);
@@ -127,7 +129,7 @@ describe('PKD Controller testing', () => {
 
   test('Public key can be set and retrieved using the Public key to address association', async () => {
     const accounts = await AccountUtils.getEthAccounts();
-    zkpPublicKeyInput = await utils.rndHex(32);
+    zkpPublicKeyInput = await utils.rndHex(27);
 
     const publicKeyInput = [];
     const publicKeyOutput = [];

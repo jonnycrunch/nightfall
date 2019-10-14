@@ -11,8 +11,8 @@ async function addFToken(data, userData) {
       {
         amount: data.amount,
         shieldContractAddress: data.shieldContractAddress,
-        sender: data.sender,
-        senderAddress: data.senderAddress,
+        transferor: data.transferor,
+        transferorAddress: data.transferorAddress,
         isReceived: true,
       },
     );
@@ -33,8 +33,8 @@ async function addNFToken(data, userData) {
         uri: data.uri,
         tokenId: data.tokenId,
         shieldContractAddress: data.shieldContractAddress,
-        sender: data.sender,
-        senderAddress: data.senderAddress,
+        transferor: data.transferor,
+        transferorAddress: data.transferorAddress,
         isReceived: true,
       },
     );
@@ -60,7 +60,7 @@ async function addTokenCommitment(data, userData) {
       },
       {
         A: data.tokenId,
-        pk: data.receiverPublicKey,
+        pk: data.transfereePublicKey,
         S_A: data.salt,
         z_A: data.commitment,
         z_A_index: data.commitmentIndex,
@@ -149,9 +149,9 @@ function listeners(data, userData) {
 
   const actualPayload = data.payload;
   switch (actualPayload.for) {
-    case 'FTCommitment':
+    case 'coin':
       return addCoinCommitment(actualPayload, userData);
-    case 'NFTCommitment':
+    case 'token':
       return addTokenCommitment(actualPayload, userData);
     case 'NFTToken':
       return addNFToken(actualPayload, userData);

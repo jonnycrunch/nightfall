@@ -48,7 +48,7 @@ export class BurnTokenComponent implements OnInit, AfterContentInit {
   users: any;
 
   /**
-   * Name of the receiver
+   * Name of the transferee
    */
   receiverName: string;
 
@@ -93,9 +93,9 @@ export class BurnTokenComponent implements OnInit, AfterContentInit {
     this.tokenApiService.burnToken(
       selectedToken.token_id,
       selectedToken.token_uri,
-      selectedToken.shield_contract_address,
       selectedToken.salt,
       selectedToken.token_commitment,
+      localStorage.getItem('secretkey'),
       selectedToken.token_commitment_index,
       this.receiverName
     ).subscribe( data => {
@@ -116,7 +116,7 @@ export class BurnTokenComponent implements OnInit, AfterContentInit {
   fetchTokens () {
     this.transactions = null;
     this.isRequesting = true;
-    this.tokenApiService.getNFTCommitments(undefined, undefined)
+    this.tokenApiService.fetchTokens(undefined, undefined)
     .subscribe( data => {
       this.isRequesting = false;
       if (data &&

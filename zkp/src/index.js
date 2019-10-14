@@ -3,6 +3,7 @@
  * @author Liju, AsishAP
  * @desc This restapi.js file gives api endpoints to access the functions of Asset, Auth, TokenHolder, TokenHolderList smart contracts */
 //
+
 import express from 'express';
 import bodyParser from 'body-parser';
 import { ftCommitmentRoutes, ftRoutes, nftCommitmentRoutes, nftRoutes } from './routes';

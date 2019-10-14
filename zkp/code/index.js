@@ -2,6 +2,7 @@
 @module
 @author iAmMichaelConnor
 @desc Run from within nightfall/zkp/code
+E.g. node src/tools-trusted-setup.js
 */
 
 import { argv } from 'yargs';
@@ -9,14 +10,17 @@ import os from 'os';
 import fs from 'fs';
 import path from 'path';
 import inquirer from 'inquirer';
-import config from 'config';
 
-import keyExtractor from './key-extractor';
+import codePreProp from './tools-code-preprop';
+import keyExtractor from './tools-key-extractor';
+
+import {getProps} from '../src/config';
 
 import zokrates from '../src/zokrates';
 
 const utils = require('../../zkp-utils/index.js'); // eslint-disable-line import/no-commonjs
 
+const config = getProps();
 const isDirectory = source => fs.lstatSync(source).isDirectory();
 const getDirectories = source =>
   fs
@@ -30,7 +34,7 @@ let container;
 
 // arguments to the command line:
 // i - filename
-const { i } = argv; // file name - pass the my-code.code file as the '-i' parameter
+const { i } = argv; // file name - //pass the my-code.code file as the '-i' parameter
 
 // a - arguments for compute-witness
 const a0 = argv.a; // arguments for compute-witness (within quotes "")
@@ -124,7 +128,7 @@ async function setup(codeFile, outputDirPath, backend, a) {
   console.log(`codeFile: ${codeFile}`);
   console.log(`outputDirPath: ${outputDirPath}`);
   console.log(`backend: ${backend}`);
-  console.log(`public arguments: ${a}`);
+  console.log(`a: ${a}`);
 
   try {
     container = await zokrates.runContainerMounted(outputDirPath);
@@ -169,11 +173,11 @@ async function setup(codeFile, outputDirPath, backend, a) {
         );
       outVals = outVals.reverse(); // the outputs of zokrates are the wrong way around
 
+      if (!s) console.log(`outVals: \n${outVals}`);
+
       let outVal;
-      console.log(outVals);
       switch (utils.isProbablyBinary(outVals)) {
-        case false:
-          console.log("'field' element detected as output");
+        case 'decimal':
           console.group('\nOutput from compute-witness:\n');
           console.log(`output array length: ${outVals.length}\n`);
           console.log(`bin:  ${outVals.forEach(val => utils.decToBin(val))}`);
@@ -181,8 +185,7 @@ async function setup(codeFile, outputDirPath, backend, a) {
           console.log(`hex:  ${outVals.forEach(val => utils.decToHex(val))}`);
           console.groupEnd();
           break;
-        case true:
-          console.log("'binary' array detected as output");
+        default:
           outVal = outVals.join('');
           console.group('\nOutput from compute-witness:\n');
           console.log(`output array length: ${outVals.length}\n`);
@@ -223,7 +226,7 @@ async function setup(codeFile, outputDirPath, backend, a) {
             '-c',
             `cp ${
               config.ZOKRATES_OUTPUTS_DIRPATH_ABS
-            }{out,out.code,proving.key,verification.key,verifier.sol} ${
+            }{out,out.code,proving.key,verification.key,variables.inf,verifier.sol} ${
               config.ZOKRATES_CONTAINER_CODE_DIRPATH_ABS
             }`,
           ],
@@ -282,7 +285,7 @@ async function setup(codeFile, outputDirPath, backend, a) {
 }
 
 /**
-@param {string} codeFile A filename string of the form "my-code.code" or "my-code.code"
+@param {string} codeFile A filename string of the form "my-code.code" or "my-code.pcode"
 @param {string} codeFileParentPath The path to, but not including, the codeFile.
 @param {string} a OPTIONAL A string of arguments, separated by space characters only.
 */
@@ -294,22 +297,33 @@ async function filingChecks(codeFile, codeFileParentPath) {
   codeFileExt: e.g. "code"
   */
   console.log(`\nFiling checks for codeFile: ${codeFile}`);
-  // check we're working with either a .code file.
+  // check we're working with either a .code or a .pcode file.
   const codeFileName = await codeFile.substring(0, codeFile.lastIndexOf('.'));
   const codeFileExt = await codeFile.substring(codeFile.lastIndexOf('.') + 1, codeFile.length);
-  if (!(codeFileExt === 'code')) {
-    return new Error("Invalid file extenstion. Expected a '.code' file.");
+  if (!(codeFileExt === 'code' || codeFileExt === 'pcode')) {
+    return new Error("Invalid file extenstion. Expected a '.code' or a '.pcode' file.");
   }
   const codeFilePath = codeFileParentPath + codeFile;
   let pwd = process.cwd();
   pwd += '/code/';
-
-  // A .code file has been specified, but let's copy it into the safe_dump dir in case things go wrong; so we don't lose our original file.
-  try {
-    await fs.copyFileSync(codeFilePath, `${pwd}safe-dump/${codeFile}`);
-    console.log(`${codeFilePath} was copied to safe-dump/${codeFile}`);
-  } catch (err) {
-    return new Error(err);
+  // For .pcode files, create the .code file, so that we may use it in the container. The newly created codeFile is saved in codeFileParentPath dir by the codePreProp function.
+  if (codeFileExt === 'pcode') {
+    // let's copy the .pcode file into the safe_dump dir in case things go wrong; so we don't lose our original file.
+    try {
+      await fs.copyFileSync(codeFilePath, `${pwd}safe-dump/${codeFile}`);
+      console.log(`${codeFilePath} was copied to safe-dump/${codeFile}`);
+    } catch (err) {
+      return new Error(err);
+    }
+    await codePreProp.preProp1(codeFilePath, codeFileName, codeFileParentPath);
+  } else {
+    // .code file has been specified, but let's copy it into the safe_dump dir in case things go wrong; so we don't lose our original file.
+    try {
+      await fs.copyFileSync(codeFilePath, `${pwd}safe-dump/${codeFile}`);
+      console.log(`${codeFilePath} was copied to safe-dump/${codeFile}`);
+    } catch (err) {
+      return new Error(err);
+    }
   }
 
   await checkForImportFiles(codeFilePath, codeFileName, codeFileParentPath);
@@ -335,7 +349,7 @@ async function checkForOldFiles(dir) {
 
   console.log('\n\nFound existing files:', files, 'in', dir);
   console.log(
-    "\n\nIf you continue, these files will be deleted (except for the '.code' file and any '.code' dependencies).",
+    "\n\nIf you continue, these files will be deleted (except for the '.pcode' file and any '.code' dependencies).",
   );
 
   const carryOn = await inquirer.prompt([
@@ -352,9 +366,10 @@ async function checkForOldFiles(dir) {
 }
 
 async function rmOldFiles(dir, files) {
-  for (let j = 0; j < files.length; j += 1) {
+  for (let j = 1; j < files.length; j += 1) {
+    const filePrefix = files[j].substring(0, 3);
     const fileExt = files[j].substring(files[j].lastIndexOf('.') + 1, files[j].length);
-    if ((files[j] === 'out.code')||(fileExt !== 'code')) {
+    if (!(fileExt === 'pcode' || filePrefix === 'aux')) {
       console.log('deleting', files[j]);
       fs.unlink(path.join(dir, files[j]), err => {
         if (err) throw err;
@@ -399,11 +414,11 @@ async function runSetup(a) {
 
   files = await readdirAsync(dir);
 
-  // filter all files for ones with extension .code
+  // filter all files for ones with extension .code or .pcode
   files = files.filter(f => {
     const codeFileExt = f.substring(f.lastIndexOf('.') + 1, f.length);
     const codeFilePrefix = f.substring(0, 3);
-    if (codeFileExt !== 'code') {
+    if (codeFileExt !== 'pcode' || codeFilePrefix === 'aux') {
       return false;
     }
     return true;
@@ -460,11 +475,11 @@ async function runSetupAll(a) {
       if (files !== []) {
         await rmOldFiles(dir2, files); // eslint-disable-line no-await-in-loop
         files = await readdirAsync(dir2); // eslint-disable-line no-await-in-loop
-        // filter all files for ones with extension .code
+        // filter all files for ones with extension .code or .pcode
         files = files.filter(f => {
           const codeFileExt = f.substring(f.lastIndexOf('.') + 1, f.length);
           const codeFilePrefix = f.substring(0, 3);
-          if (codeFileExt !== 'code') {
+          if (codeFileExt !== 'pcode' || codeFilePrefix === 'aux') {
             return false;
           }
           return true;
@@ -490,10 +505,11 @@ async function runSetupAll(a) {
 async function allOrOne() {
   if (!i) {
     console.log(
-      "The '-i' option has not been specified.\nThat's OK, we can go ahead and loop through every .code file.\nHOWEVER, if you wanted to choose just one file, cancel this process, and instead use option -i (see the README-trusted-setup)",
+      "The '-i' option has not been specified.\nThat's OK, we can go ahead and loop through every .code or .pcode file.\nHOWEVER, if you wanted to choose just one file, cancel this process, and instead use option -i, e.g.: 'node src/tools-tar-create.js -i my-code.code'",
     );
     console.log('Be warned, this could take up to an hour!');
 
+    // beep(2);
     const carryOn = await inquirer.prompt([
       {
         type: 'yesno',
@@ -505,7 +521,7 @@ async function allOrOne() {
     if (carryOn.continue !== 'y') return;
 
     try {
-      runSetupAll(a1); // we'll do all .code files if no option is specified
+      runSetupAll(a1); // we'll do all .code (or .pcode) files if no option is specified
     } catch (err) {
       throw new Error(`${err}Trusted setup failed.`);
     }

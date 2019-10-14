@@ -1,0 +1,109 @@
+
+import "hashes/sha256/512bit.code" as sha256compression
+import "utils/pack/unpack128.code" as unpack128
+import "ecc/babyjubjubParams.code" as curveParams
+import "ecc/edwardsScalarMult.code" as scalarMult
+import "ecc/edwardsAdd.code" as add
+import "utils/pack/nonStrictUnpack256.code" as unpack256
+import "./curve-points.code" as curvePoints
+import "ecc/edwardsCompress.code" as edwardsCompress
+
+def CONCAT128x216x216(field[128] a, field[216] b, field[216] c)->(field[560]):
+	return [...a, ...b, ...c]
+
+def CONCAT216x216(field[216] a, field[216] b)->(field[432]):
+	return [...a, ...b]
+
+def shaPad432To512(field[432] a)->(field[512]):
+	return [...a, 1, 70....0, 1,1,0,1,1,0,0,0,0]
+
+def shaPad216To512(field[216] a)->(field[512]):
+	return [...a, 1, 287....0, 1,1,0,1,1,0,0,0]
+
+def shaPad128To512(field[128] a)->(field[512]):
+	return [...a, 1, 375....0, 1,0,0,0,0,0,0,0]
+
+// This function encrypts c, pkA and Sc (so that the authority can recover them)
+def enc2(field[128] c, field[2] pkA, field[2] gu, field[2] gv, field[10] cp, field[2] y1, field[2] y2, field[256]r )->(field[6]):
+
+	//TODO - test if this array extension is needed:
+	field[256] C = [...[0;128], ...c] //convert the 128 bit currency to 256 bit for scalar multiplication
+
+	//y1.r and y2.r
+	field[2] y1r = scalarMult(r, y1, cp)
+	field[2] y2r = scalarMult(r, y2, cp)
+
+	//these are the elements that make up the encryption
+	field[2] c0 = scalarMult(r, gu, cp ) // = g.r
+	field[2] c1 = add(scalarMult(C, gv, curveParams()), y1r, curveParams() )
+	field[2] c2 = add(pkA, y2r, curveParams() )
+
+	return [...c0, ...c1, ...c2]
+
+//this function computes a pedersen hash followed by a sha hash for extra safety
+def hash(field[128] c, field[2] Pk, field[256] S, field[20] g, field[10] cp)->(field[256]):
+	field[256] C = [...[0;128], ...c] //convert the 128 bit currency to 256 bit for scalar multiplication
+	field[256] Pkx = unpack256(Pk[0])
+	field[256] Pky = unpack256(Pk[1])
+	field[2] ped = add(add(scalarMult(C,[g[4],g[5]],cp),scalarMult(Pkx,[g[6],g[7]],cp),cp), add(scalarMult(S,[g[8],g[9]],cp),scalarMult(Pky,[g[10],g[11]],cp),cp),cp)
+	field[256] com = edwardsCompress(ped, cp)
+	field[512] q = shaPad216To512(com[40..256])
+	return sha256compression(q[0..256],q[256..512])
+
+
+//MAIN - Proving Asset Coin A is in the token Z { Z = H(S|Pk|A) }
+
+//inputs for main are:
+
+// - A (public) is the 128 bit coin value
+
+// - Pk (private) is the 216 bit public key of A derived by hashing the Secret Key Sk of A. IT IS KEPT PRIVATE FOR ZK!!!
+
+// - S (private) is the 216 bit private token random nonce
+
+// - Z (public) is the 216 bit public identifier of the token commitment
+
+// Note - We have truncated the 256 bit SHA hash down to 216 bits.  We do not believe this has a significant affect on security and it avoids having to include sha256 rounds in the sha circuit implementation.
+
+//Each field element can be at most 254 bits. We cap our field elements to 128 bits (16 bytes) to match the functionality of the pack128() and unpack128() functions.
+//This means that most input variables occupy two field elements, being 216 bits in length
+
+def main(field pA, 'field' £pPk1...0, 'field' £pS1...0, 'field' pZ1...0, field[2] y1, field[2] y2, 'field' £pr1...0, field[2] C0, field[2] C1, field[2] C2)->(field1):
+
+	//Unpack the inputs A,S,Pk,Z. Unpacks each into a 128 bit block (for simplicity). The unpacked binary string is in big endian format, left-padded with 0's. (NOTE: THIS METHOD OF PADDING IS DIFFERENT FROM THE PADDING REQUIRED FOR SHA256 - i.e. unpack128() padding is very different from that produced by shaPad64To512())
+	//unpack128 unpacks a field element to 128 field elements.
+	//the coin value A is only 128 bits - no one will want more money than that.
+
+	field[128] A = unpack128(pA)
+	field[128] S1 = unpack128(pS1) //this may seem long winded but ZoKrates needs intermediate variables for now
+	field[128] S0 = unpack128(pS0)
+	field[256] S = [...S1, ...S0]
+	field[2] Pk = [pPk1, pPk0]
+	field[128] Z1 = unpack128(pZ1)
+	field[128] Z0 = unpack128(pZ0)
+	field[256] Z = [...Z1, ...Z0]
+
+	field[128] r1 = unpack128(pr1)
+	field[128] r0 = unpack128(pr0)
+	field[256] r = [...r1, ...r0]
+
+	//compute z from H(A,Pk,S) and the encryption of A, Pk:
+	 //first the encryption
+	field[10] cp = curveParams()
+	field[20] g = curvePoints() //get a list of useful curve points
+	field[2] gm = cp[4..6] //used to encrypt against master public key
+	field[2] gv = [g[2], g[3]]
+	field[6] c = enc2(A, Pk, gm, gv, cp, y1, y2, r)
+	field[2] c0 = [c[0], c[1]] //for convenience, extract the components of c
+	field[2] c1 = [c[2], c[3]]
+	field[2] c2 = [c[4], c[5]]
+
+	//then the hash.
+	field[256] z = hash(A, Pk, S, g, cp)
+
+	z[40..256] == Z[40..256]
+	c0 == C0
+	c1 == C1
+	c2 == C2
+
+	return 1

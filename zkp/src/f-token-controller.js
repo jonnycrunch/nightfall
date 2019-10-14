@@ -1,3 +1,4 @@
+/* globals BigInt */
 /**
 This acts as a layer of logic between the index.js, which lands the
 rest api calls, and the heavy-lifitng coin-zkp.js and zokrates.js.  It exists so
@@ -10,16 +11,25 @@ arbitrary amounts of currency in zero knowlege.
 import Web3 from 'web3';
 import contract from 'truffle-contract';
 import jsonfile from 'jsonfile';
-import config from 'config';
 import zkp from './f-token-zkp';
 import zokrates from './zokrates';
 import cv from './compute-vectors';
 import Element from './Element';
+import { getProps } from './config';
+import {
+  hash,
+  enc2,
+  rndFieldElement,
+  scalarMult,
+  getAuthorityPublicKeys,
+} from './encrypted-commitment';
 
-const utils = require('zkp-utils');
+const utils = require('zkp-utils')('/app/config/stats.json');
 
+const config = getProps();
 const web3 = new Web3(
-  Web3.givenProvider || new Web3.providers.HttpProvider(config.get('web3ProviderURL')),
+  Web3.givenProvider ||
+    new Web3.providers.HttpProvider(`${config.zkp.rpc.host}:${config.zkp.rpc.port}`),
 );
 
 const FTokenShield = contract(jsonfile.readFileSync('./build/contracts/FTokenShield.json'));
@@ -38,6 +48,8 @@ FToken.setProvider(web3.currentProvider);
 
 let container;
 const shield = {}; // this field holds the current Shield contract instance.
+const gk = config.babyjubjub.points[0];
+const { y1, y2 } = getAuthorityPublicKeys(); // public keys
 
 async function unlockAccount(address, password) {
   await web3.eth.personal.unlockAccount(address, password, 0);
@@ -163,6 +175,8 @@ being instantiated.
 */
 async function setupComputeProof(hostDir) {
   container = await zokrates.runContainerMounted(hostDir);
+  console.log(`Container id: ${container.id}`);
+  console.log(`To connect to the container manually: 'docker exec -ti ${container.id} bash'`);
 }
 
 /**
@@ -174,15 +188,41 @@ you.
 @param {string} hostDir - the directory on the host to mount into the runContainerMounted
 @returns the proof object
 */
-async function computeProof(elements, hostDir) {
+async function computeProof(elements, hostDir, proofDescription) {
   if (container === undefined || container === null) await setupComputeProof(hostDir);
-
-  console.log(`Container id: ${container.id}`);
-  console.log(`To connect to the container manually: 'docker exec -ti ${container.id} bash'`);
-
+  let timeEst;
+  let startTime;
+  let endTime;
+  let duration;
+  if (proofDescription) {
+    timeEst = await utils.getTimeEst(proofDescription, 'computeWitness');
+    startTime = new Date();
+    setTimeout(() => {
+      utils.progressBar(timeEst);
+    }, 1000);
+  }
   await zokrates.computeWitness(container, cv.computeVectors(elements), hostDir);
+  if (proofDescription) {
+    await utils.stopProgressBar();
+    endTime = new Date();
+    duration = endTime - startTime;
+    utils.updateTimeEst(proofDescription, 'computeWitness', duration);
+  }
 
+  if (proofDescription) {
+    timeEst = await utils.getTimeEst(proofDescription, 'generateProof');
+    startTime = new Date();
+    setTimeout(() => {
+      utils.progressBar(timeEst);
+    }, 1000);
+  }
   const proof = await zokrates.generateProof(container, undefined, hostDir);
+  if (proofDescription) {
+    await utils.stopProgressBar();
+    endTime = new Date();
+    duration = endTime - startTime;
+    utils.updateTimeEst(proofDescription, 'generateProof', duration);
+  }
 
   console.group(`Proof: ${JSON.stringify(proof, undefined, 2)}`);
   console.groupEnd();
@@ -206,8 +246,11 @@ knows S_A,pkA,n and n so could in fact calculate the token themselves.
 This is required for later transfers/joins so that Alice knows which 'chunks' of the Merkle Tree
 she needs to 'get' from the fTokenShield contract in order to calculate a path.
 */
-async function mint(A, pkA, S_A, account) {
+async function mint(A, _pkA, S_A, account) {
   console.group('\nIN MINT...');
+
+  // if necessary convert the public key in to an ec point
+  const pkA = config.KYC ? scalarMult(BigInt(_pkA), gk) : _pkA;
 
   console.log('Finding the relevant Shield and Verifier contracts');
   const fTokenShield = shield[account] ? shield[account] : await FTokenShield.deployed();
@@ -226,27 +269,40 @@ async function mint(A, pkA, S_A, account) {
       else resolve(data);
     }),
   );
+
   const { vkId } = vkIds.MintCoin;
 
-  // Calculate new arguments for the proof:
-  const zA = utils.concatenateThenHash(A, pkA, S_A);
+  // Calculate new arguments for the proof.  It depends on whether we have KYC enabled
+  const r = rndFieldElement(); // this is used for El-Gamal encryption
+  const { c0, c1, c2 } = enc2(A, pkA, r);
+  const zA = config.KYC ? hash(A, pkA, S_A) : utils.recursiveHashConcat(A, pkA, S_A);
 
   console.group('Existing Proof Variables:');
   const p = config.ZOKRATES_PACKING_SIZE;
-  const pt = Math.ceil((config.INPUTS_HASHLENGTH * 8) / config.ZOKRATES_PACKING_SIZE); // packets in bits
   console.log('A: ', `${A} : `, utils.hexToFieldPreserve(A, p, 1));
-  console.log('pkA: ', pkA, ' : ', utils.hexToFieldPreserve(pkA, p, pt));
-  console.log('S_A: ', S_A, ' : ', utils.hexToFieldPreserve(S_A, p, pt));
+  if (config.KYC) console.log('pkA: ', pkA);
+  else console.log('pkA: ', pkA, ' : ', utils.hexToFieldPreserve(pkA, p));
+  console.log('S_A: ', S_A, ' : ', utils.hexToFieldPreserve(S_A, p));
   console.groupEnd();
 
   console.group('New Proof Variables:');
-  console.log('zA: ', zA, ' : ', utils.hexToFieldPreserve(zA, p, pt));
+  console.log('zA: ', zA, ' : ', utils.hexToFieldPreserve(zA, p));
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(A, zA);
-  console.log('publicInputHash:', publicInputHash);
-
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = config.KYC
+    ? cv.computeVectors([
+        new Element(A, 'field', 1), // Note that, unlike with an Asset token, we load A, not H(A)
+        new Element(zA, 'field'),
+        new Element(y1, 'point'),
+        new Element(y2, 'point'),
+        new Element(c0, 'point'), // we need to include these intermediate values in the public
+        new Element(c1, 'point'), // parameters because we have to show that they make up the
+        new Element(c2, 'point'), // hash z, or we won't know it's decryptable
+      ])
+    : cv.computeVectors([
+        new Element(A, 'field', 1), // Note that, unlike with an Asset token, we load A, not H(A)
+        new Element(zA, 'field'),
+      ]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -254,21 +310,38 @@ async function mint(A, pkA, S_A, account) {
   const pwd = process.env.PWD.toString();
   console.log(pwd);
 
-  const hostDir = config.FT_MINT_DIR;
-  console.log(hostDir);
+  const hostDir = config.KYC ? config.FT_KYC_MINT_DIR : config.FT_MINT_DIR;
+  console.log('Host directory path is:', hostDir);
 
   // compute the proof
   console.group('Computing proof with w=[pkA,S_A] x=[A,Z,1]');
-  let proof = await computeProof(
-    [
-      new Element(publicInputHash, 'field', 248, 1),
-      new Element(A, 'field', 128, 1),
-      new Element(pkA, 'field'),
-      new Element(S_A, 'field'),
-      new Element(zA, 'field'),
-    ],
-    hostDir,
-  );
+  let proof = config.KYC
+    ? await computeProof(
+        [
+          new Element(A, 'field', 1),
+          new Element(pkA, 'point'),
+          new Element(S_A, 'field'),
+          new Element(zA, 'field'),
+          new Element(y1, 'point'),
+          new Element(y2, 'point'),
+          new Element(r, 'scalar'),
+          new Element(c0, 'point'), // we need to include these intermediate values in the public
+          new Element(c1, 'point'), // parameters because we have to show that they make up the
+          new Element(c2, 'point'), // hash z, or we won't know it's decryptable
+        ],
+        hostDir,
+        'MintCoin',
+      )
+    : await computeProof(
+        [
+          new Element(A, 'field', 1),
+          new Element(pkA, 'field'),
+          new Element(S_A, 'field'),
+          new Element(zA, 'field'),
+        ],
+        hostDir,
+        'MintCoin',
+      );
 
   proof = Object.values(proof);
   // convert to flattened array:
@@ -291,7 +364,7 @@ async function mint(A, pkA, S_A, account) {
 
   // with the pre-compute done, and the funds approved, we can mint the token,
   // which is now a reasonably light-weight calculation
-  const zAIndex = await zkp.mint(proof, inputs, vkId, A, zA, account, fTokenShield);
+  const zAIndex = await zkp.mint(proof, inputs, vkId, account, fTokenShield);
 
   console.log('Mint output: [zA, zAIndex]:', zA, zAIndex.toString());
   console.log('MINT COMPLETE\n');
@@ -327,7 +400,7 @@ async function transfer(
   D,
   E,
   F,
-  pkB,
+  _pkB,
   S_C,
   S_D,
   S_E,
@@ -371,35 +444,38 @@ async function transfer(
   console.log(`Merkle Root: ${root}`);
 
   // Calculate new arguments for the proof:
-  const pkA = utils.hash(skA);
-  const nC = utils.concatenateThenHash(S_C, skA);
-  const nD = utils.concatenateThenHash(S_D, skA);
-  const zE = utils.concatenateThenHash(E, pkB, S_E);
-  const zF = utils.concatenateThenHash(F, pkA, S_F);
+  // for backwards compatibility we define Pk = g.SPk, SPk = H(Sk)
+  // thus we can generate a 'KYC' public key from the conventional hash-based one
+  const pkB = config.KYC ? scalarMult(BigInt(_pkB), gk) : _pkB;
+  const spkA = utils.recursiveHashConcat(skA);
+  const pkA = config.KYC ? scalarMult(BigInt(spkA), gk) : spkA;
+  const nC = config.KYC
+    ? utils.recursiveHashConcat(S_C, spkA)
+    : utils.recursiveHashConcat(S_C, skA);
+  const nD = config.KYC
+    ? utils.recursiveHashConcat(S_D, spkA)
+    : utils.recursiveHashConcat(S_D, skA);
+
+  const re = rndFieldElement(); // this is used for El-Gamal encryption
+  const { c0: ce0, c1: ce1, c2: ce2 } = enc2(E, pkB, re);
+  const rf = rndFieldElement(); // this is used for El-Gamal encryption
+  const { c0: cf0, c1: cf1, c2: cf2 } = enc2(F, pkA, rf);
+  const zE = config.KYC ? hash(E, pkB, S_E) : utils.recursiveHashConcat(E, pkB, S_E);
+  const zF = config.KYC ? hash(F, pkA, S_F) : utils.recursiveHashConcat(F, pkA, S_F);
 
   // we need the Merkle path from the token commitment to the root, expressed as Elements
-  const pathC = await cv.computePath(account, fTokenShield, zC, zCIndex);
-  const pathCElements = {
-    elements: pathC.path.map(
-      element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
-    ), // we truncate to 216 bits - sending the whole 256 bits will overflow the prime field
-    positions: new Element(pathC.positions, 'field', 128, 1),
-  };
-  // console.log(`pathCElements.path:`, pathCElements.elements);
-  // console.log(`pathCElements.positions:`, pathCElements.positions);
-  const pathD = await cv.computePath(account, fTokenShield, zD, zDIndex);
-  const pathDElements = {
-    elements: pathD.path.map(
-      element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
-    ), // we truncate to 216 bits - sending the whole 256 bits will overflow the prime field
-    positions: new Element(pathD.positions, 'field', 128, 1),
-  };
-  // console.log(`pathDlements.path:`, pathDElements.elements);
-  // console.log(`pathDlements.positions:`, pathDElements.positions);
-
-  // Although we only strictly need the root to be reconciled within zokrates, it's easier to check and intercept any errors in js; so we'll first try to reconcole here:
-  cv.checkRoot(zC, pathC, root);
-  cv.checkRoot(zD, pathD, root);
+  const pathC = await cv.computePath(account, fTokenShield, zC, zCIndex).then(result => {
+    return {
+      elements: result.path.map(element => new Element(element, 'field', 2)),
+      positions: new Element(result.positions, 'field', 1),
+    };
+  });
+  const pathD = await cv.computePath(account, fTokenShield, zD, zDIndex).then(result => {
+    return {
+      elements: result.path.map(element => new Element(element, 'field', 2)),
+      positions: new Element(result.positions, 'field', 1),
+    };
+  });
 
   console.group('Existing Proof Variables:');
   const p = config.ZOKRATES_PACKING_SIZE;
@@ -407,7 +483,8 @@ async function transfer(
   console.log(`D: ${D} : ${utils.hexToFieldPreserve(D, p)}`);
   console.log(`E: ${E} : ${utils.hexToFieldPreserve(E, p)}`);
   console.log(`F: ${F} : ${utils.hexToFieldPreserve(F, p)}`);
-  console.log(`pkB: ${pkB} : ${utils.hexToFieldPreserve(pkB, p)}`);
+  if (config.KYC) console.log('pkB', pkB);
+  else console.log(`pkB: ${pkB} : ${utils.hexToFieldPreserve(pkB, p)}`);
   console.log(`S_C: ${S_C} : ${utils.hexToFieldPreserve(S_C, p)}`);
   console.log(`S_D: ${S_D} : ${utils.hexToFieldPreserve(S_D, p)}`);
   console.log(`S_E: ${S_E} : ${utils.hexToFieldPreserve(S_E, p)}`);
@@ -418,7 +495,8 @@ async function transfer(
   console.groupEnd();
 
   console.group('New Proof Variables:');
-  console.log(`pkA: ${pkA} : ${utils.hexToFieldPreserve(pkA, p)}`);
+  if (config.KYC) console.log('pkA', pkA);
+  else console.log(`pkA: ${pkA} : ${utils.hexToFieldPreserve(pkA, p)}`);
   console.log(`nC: ${nC} : ${utils.hexToFieldPreserve(nC, p)}`);
   console.log(`nD: ${nD} : ${utils.hexToFieldPreserve(nD, p)}`);
   console.log(`zE: ${zE} : ${utils.hexToFieldPreserve(zE, p)}`);
@@ -426,10 +504,34 @@ async function transfer(
   console.log(`root: ${root} : ${utils.hexToFieldPreserve(root, p)}`);
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(root, nC, nD, zE, zF);
-  console.log('publicInputHash:', publicInputHash);
+  if (pathD.elements[0].value !== root || pathC.elements[0].value !== root) {
+    console.log('pathD', pathD.elements[0].value, 'pathC', pathC.elements[0].value, 'root', root);
+    throw new Error('Root inequality');
+  }
+  const inputs = config.KYC
+    ? cv.computeVectors([
+        new Element(nC, 'field'),
+        new Element(nD, 'field'),
+        new Element(zE, 'field'),
+        new Element(zF, 'field'),
+        new Element(root, 'field'),
+        new Element(y1, 'point'),
+        new Element(y2, 'point'),
+        new Element(ce0, 'point'),
+        new Element(ce1, 'point'),
+        new Element(ce2, 'point'),
+        new Element(cf0, 'point'),
+        new Element(cf1, 'point'),
+        new Element(cf2, 'point'),
+      ])
+    : cv.computeVectors([
+        new Element(nC, 'field'),
+        new Element(nD, 'field'),
+        new Element(zE, 'field'),
+        new Element(zF, 'field'),
+        new Element(root, 'field'),
+      ]);
 
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -437,7 +539,7 @@ async function transfer(
   const pwd = process.env.PWD.toString();
   console.log(pwd);
 
-  const hostDir = config.FT_TRANSFER_DIR;
+  const hostDir = config.KYC ? config.FT_KYC_TRANSFER_DIR : config.FT_TRANSFER_DIR;
   console.log(hostDir);
 
   // compute the proof
@@ -447,31 +549,67 @@ async function transfer(
   console.log(
     'vector order: [C,skA,S_C,pathC[0...31],orderC,D,S_D,pathD[0...31], orderD,nC,nD,E,pkB,S_E,zE,F,S_F,zF,root]',
   );
-  let proof = await computeProof(
-    [
-      new Element(publicInputHash, 'field', 248, 1),
-      new Element(C, 'field', 128, 1),
-      new Element(skA, 'field'),
-      new Element(S_C, 'field'),
-      ...pathCElements.elements.slice(1),
-      pathCElements.positions,
-      new Element(D, 'field', 128, 1),
-      new Element(S_D, 'field'),
-      ...pathDElements.elements.slice(1),
-      pathDElements.positions,
-      new Element(nC, 'field'),
-      new Element(nD, 'field'),
-      new Element(E, 'field', 128, 1),
-      new Element(pkB, 'field'),
-      new Element(S_E, 'field'),
-      new Element(zE, 'field'),
-      new Element(F, 'field', 128, 1),
-      new Element(S_F, 'field'),
-      new Element(zF, 'field'),
-      new Element(root, 'field'),
-    ],
-    hostDir,
-  );
+  let proof = config.KYC
+    ? await computeProof(
+        [
+          new Element(C, 'field', 1),
+          new Element(spkA, 'field'),
+          new Element(S_C, 'field'),
+          ...pathC.elements.slice(1),
+          pathC.positions,
+          new Element(D, 'field', 1),
+          new Element(S_D, 'field'),
+          ...pathD.elements.slice(1),
+          pathD.positions,
+          new Element(nC, 'field'),
+          new Element(nD, 'field'),
+          new Element(E, 'field', 1),
+          new Element(pkB, 'point'),
+          new Element(S_E, 'field'),
+          new Element(zE, 'field'),
+          new Element(F, 'field', 1),
+          new Element(S_F, 'field'),
+          new Element(zF, 'field'),
+          pathC.elements[0],
+          new Element(y1, 'point'),
+          new Element(y2, 'point'),
+          new Element(re, 'scalar'),
+          new Element(rf, 'scalar'),
+          new Element(ce0, 'point'),
+          new Element(ce1, 'point'),
+          new Element(ce2, 'point'),
+          new Element(cf0, 'point'),
+          new Element(cf1, 'point'),
+          new Element(cf2, 'point'),
+        ],
+        hostDir,
+        'TransferCoin',
+      )
+    : await computeProof(
+        [
+          new Element(C, 'field', 1),
+          new Element(skA, 'field'),
+          new Element(S_C, 'field'),
+          ...pathC.elements.slice(1),
+          pathC.positions,
+          new Element(D, 'field', 1),
+          new Element(S_D, 'field'),
+          ...pathD.elements.slice(1),
+          pathD.positions,
+          new Element(nC, 'field'),
+          new Element(nD, 'field'),
+          new Element(E, 'field', 1),
+          new Element(pkB, 'field'),
+          new Element(S_E, 'field'),
+          new Element(zE, 'field'),
+          new Element(F, 'field', 1),
+          new Element(S_F, 'field'),
+          new Element(zF, 'field'),
+          pathC.elements[0],
+        ],
+        hostDir,
+        'TransferCoin',
+      );
 
   proof = Object.values(proof);
   // convert to flattened array:
@@ -481,18 +619,7 @@ async function transfer(
   console.groupEnd();
 
   // send the token to Bob by transforming the commitment
-  const [zEIndex, zFIndex, txObj] = await zkp.transfer(
-    proof,
-    inputs,
-    vkId,
-    root,
-    nC,
-    nD,
-    zE,
-    zF,
-    account,
-    fTokenShield,
-  );
+  const [zEIndex, zFIndex, txObj] = await zkp.transfer(proof, inputs, vkId, account, fTokenShield);
 
   console.log('TRANSFER COMPLETE\n');
   console.groupEnd();
@@ -521,6 +648,13 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   if (payTo === undefined) payTo = account; // have the option to pay out to another address
   // before we can burn, we need to deploy a verifying key to mintVerifier (reusing mint for this)
   console.group('\nIN BURN...');
+  console.log('C', C);
+  console.log('skA', skA);
+  console.log('S_C', S_C);
+  console.log('zC', zC);
+  console.log('zCIndex', zCIndex);
+  console.log('account', account);
+  console.log('payTo', payTo);
 
   console.log('Finding the relevant Shield and Verifier contracts');
   const fTokenShield = shield[account] ? shield[account] : await FTokenShield.deployed();
@@ -545,21 +679,18 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   console.log(`Merkle Root: ${root}`);
 
   // Calculate new arguments for the proof:
-  const Nc = utils.concatenateThenHash(S_C, skA);
+  const spkA = utils.recursiveHashConcat(skA);
+  const pkA = config.KYC ? scalarMult(BigInt(spkA), gk) : spkA;
+  const Nc = config.KYC
+    ? utils.recursiveHashConcat(S_C, spkA)
+    : utils.recursiveHashConcat(S_C, skA);
 
-  // We need the Merkle path from the commitment to the root, expressed as Elements
-  const path = await cv.computePath(account, fTokenShield, zC, zCIndex);
-  const pathElements = {
-    elements: path.path.map(
-      element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
-    ), // We can fit the 216 bit hash into a single field - more compact
-    positions: new Element(path.positions, 'field', 128, 1),
-  };
-  // console.log(`pathElements.path:`, pathElements.elements);
-  // console.log(`pathElements.positions:`, pathElements.positions);
-
-  // Although we only strictly need the root to be reconciled within zokrates, it's easier to check and intercept any errors in js; so we'll first try to reconcole here:
-  cv.checkRoot(zC, path, root);
+  const path = await cv.computePath(account, fTokenShield, zC, zCIndex).then(result => {
+    return {
+      elements: result.path.map(element => new Element(element, 'field', 2)),
+      positions: new Element(result.positions, 'field', 1),
+    };
+  });
 
   // Summarise values in the console:
   console.group('Existing Proof Variables:');
@@ -568,20 +699,21 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   console.log(`skA: ${skA} : ${utils.hexToFieldPreserve(skA, p)}`);
   console.log(`S_C: ${S_C} : ${utils.hexToFieldPreserve(S_C, p)}`);
   console.log(`payTo: ${payTo} : ${utils.hexToFieldPreserve(payTo, p)}`);
-  const payToLeftPadded = utils.leftPadHex(payTo, config.INPUTS_HASHLENGTH * 2); // left-pad the payToAddress with 0's to fill all 256 bits (64 octets) (so the sha256 function is hashing the same thing as inside the zokrates proof)
-  console.log(`payToLeftPadded: ${payToLeftPadded}`);
   console.groupEnd();
-
   console.group('New Proof Variables:');
   console.log(`Nc: ${Nc} : ${utils.hexToFieldPreserve(Nc, p)}`);
+  if (config.KYC) console.log('pkA', pkA);
+  else console.log(`pkA: ${pkA} : ${utils.hexToFieldPreserve(pkA, p)}`);
   console.log(`zC: ${zC} : ${utils.hexToFieldPreserve(zC, p)}`);
   console.log(`root: ${root} : ${utils.hexToFieldPreserve(root, p)}`);
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(root, Nc, C, payToLeftPadded); // notice we're using the version of payTo which has been padded to 256-bits; to match our derivation of publicInputHash within our zokrates proof.
-  console.log('publicInputHash:', publicInputHash);
-
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = cv.computeVectors([
+    new Element(payTo, 'field'),
+    new Element(C, 'field', 1),
+    new Element(Nc, 'field'),
+    new Element(root, 'field'),
+  ]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -589,25 +721,40 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   const pwd = process.env.PWD.toString();
   console.log(pwd);
 
-  const hostDir = config.FT_BURN_DIR;
+  const hostDir = config.KYC ? config.FT_KYC_BURN_DIR : config.FT_BURN_DIR;
   console.log(hostDir);
 
   // compute the proof
   console.group('Computing proof with w=[skA,S_C,path[],order] x=[C,Nc,root,1]');
-  let proof = await computeProof(
-    [
-      new Element(publicInputHash, 'field', 248, 1),
-      new Element(payTo, 'field'),
-      new Element(C, 'field', 128, 1),
-      new Element(skA, 'field'),
-      new Element(S_C, 'field'),
-      ...pathElements.elements.slice(1),
-      pathElements.positions,
-      new Element(Nc, 'field'),
-      new Element(root, 'field'),
-    ],
-    hostDir,
-  );
+  let proof = config.KYC
+    ? await computeProof(
+        [
+          new Element(payTo, 'field'),
+          new Element(C, 'field', 1),
+          new Element(spkA, 'field'),
+          new Element(S_C, 'field'),
+          ...path.elements.slice(1),
+          path.positions,
+          new Element(Nc, 'field'),
+          new Element(root, 'field'),
+        ],
+        hostDir,
+        'BurnCoin',
+      )
+    : await computeProof(
+        [
+          new Element(payTo, 'field'),
+          new Element(C, 'field', 1),
+          new Element(skA, 'field'),
+          new Element(S_C, 'field'),
+          ...path.elements.slice(1),
+          path.positions,
+          new Element(Nc, 'field'),
+          new Element(root, 'field'),
+        ],
+        hostDir,
+        'BurnCoin',
+      );
 
   proof = Object.values(proof);
   // convert to flattened array:
@@ -618,7 +765,7 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
 
   // with the pre-compute done we can burn the token, which is now a reasonably
   // light-weight calculation
-  await zkp.burn(proof, inputs, vkId, root, Nc, C, payTo, account, fTokenShield);
+  await zkp.burn(proof, inputs, vkId, account, fTokenShield);
 
   console.log('BURN COMPLETE\n');
   console.groupEnd();

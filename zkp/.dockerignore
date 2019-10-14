@@ -90,6 +90,8 @@ typings/
 
 # End of https://www.gitignore.io/api/node
 
+**/stats.json
+
 #other zkp files
 #ensures users who do their own local 'trusted setups' don't 'corrupt' the shared zkp files in the opensource repo.
 **/gm17/*/**

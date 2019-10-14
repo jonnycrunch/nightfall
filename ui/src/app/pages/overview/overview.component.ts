@@ -19,6 +19,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 })
 export class OverviewComponent extends Config implements OnInit {
   /**
+   * To store all users
+   */
+  user: any;
+  /**
    * Flag for http request
    */
   isRequesting =  false;
@@ -104,6 +108,7 @@ export class OverviewComponent extends Config implements OnInit {
   }
 
   ngOnInit(): void {
+    this.getUser();
     this.getUserERC20AndERC721TokenCount();
     this.route
       .queryParams
@@ -129,7 +134,7 @@ export class OverviewComponent extends Config implements OnInit {
    */
   getUserERC20AndERC721TokenCount() {
     const coins = this.accountService.getCoins();
-    const tokenCount = this.accountService.getTokenCommitmentCounts();
+    const tokenCount = this.accountService.getCount();
     const nftBalance = this.accountService.getNFTBalance();
     Observable.forkJoin([coins, tokenCount, nftBalance]).subscribe(
       responseList  => {
@@ -268,4 +273,22 @@ export class OverviewComponent extends Config implements OnInit {
     this.pageNo = pageN;
     this.getTransactionList(this.currentType, this.pageNo, this.pageSize);
   }
+
+  /**
+   * Method to retrive all users.
+   *
+   */
+  getUser() {
+    this.accountService.getUser().subscribe(
+      data => {
+        console.log('data', data);
+        this.user = data['data'];
+      },
+      error => {
+        console.log('error in user get', error);
+      }
+    );
+  }
+
+
 }

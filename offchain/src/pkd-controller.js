@@ -7,13 +7,16 @@ The functions are fairly self-documenting so not individually commented.
 import tc from 'truffle-contract';
 import Web3 from 'web3';
 import jsonfile from 'jsonfile';
-import utils from 'zkp-utils';
-import config from 'config';
+import Utils from 'zkp-utils';
+import { getProps } from './config';
+
+const utils = Utils('/app/config/stats.json');
 
 const bytes32 = name => utils.utf8StringToHex(name, 32);
 const stringify = hex => utils.hexToUtf8String(hex);
 
-const provider = new Web3.providers.HttpProvider(config.get('web3ProviderURL'));
+const { offchain } = getProps();
+const provider = new Web3.providers.HttpProvider(`${offchain.rpc.host}:${offchain.rpc.port}`);
 
 const PKD = tc(jsonfile.readFileSync('/app/build/contracts/PKD.json'));
 PKD.setProvider(provider);

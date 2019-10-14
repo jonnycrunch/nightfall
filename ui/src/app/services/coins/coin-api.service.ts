@@ -102,12 +102,13 @@ export class CoinApiService {
   /**
    * Method to initiate a HTTP request to fetch ERC-20 token commitments.
    *
+   * @param account {Object} Account details
    */
-  fetchCoins() {
+  fetchCoins(account) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
-    const url = config.apiGateway.root + 'coin';
+    const url = config.database.root + 'coin?account=' + account;
 
     return this.http
       .get(url, httpOptions)
@@ -118,6 +119,7 @@ export class CoinApiService {
    * Method to initiate a HTTP request to burn ERC-20 token commitments.
    *
    * @param A {String} Amount to burn
+   * @param sk_A {String} Seceret key of Alice
    * @param S_A {String} Serial number
    * @param z_A_index {String} Token commitment index
    * @param z_A {String} Token commitment
@@ -125,6 +127,7 @@ export class CoinApiService {
    */
   burnCoin (
     A: string,
+    sk_A: string,
     S_A: string,
     z_A_index: string,
     z_A: string,
@@ -137,6 +140,7 @@ export class CoinApiService {
 
     const body = {
       A,
+      sk_A,
       S_A,
       pk_A,
       z_A_index,
@@ -166,6 +170,7 @@ export class CoinApiService {
    * @param S_F {String} Serial number of change token
    * @param z_C {String} Token1 commitment
    * @param z_D {String} Token2 commitment
+   * @param sk_A {String} Secret key of Alice
    * @param pk_A {String} Public key of Alice
    * @param receiver_name {String} Rceiver name
    */
@@ -180,6 +185,7 @@ export class CoinApiService {
     z_D_index: string,
     z_C: string,
     z_D: string,
+    sk_A: string,
     pk_A: string,
     receiver_name) {
     const httpOptions = {
@@ -195,6 +201,7 @@ export class CoinApiService {
       S_D,
       z_C_index,
       z_D_index,
+      sk_A,
       z_C,
       z_D,
       pk_A,

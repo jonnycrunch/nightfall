@@ -50,7 +50,7 @@ export class BurnCoinComponent implements OnInit , AfterContentInit {
   users: any;
 
 /**
- * Name of the receiver
+ * Name of the transferee
  */
   receiverName: string;
 
@@ -88,7 +88,7 @@ export class BurnCoinComponent implements OnInit , AfterContentInit {
   fetchCoins () {
     this.transactions = null;
     this.isRequesting = true;
-      this.coinApiService.fetchCoins()
+      this.coinApiService.fetchCoins(localStorage.getItem('address'))
       .subscribe( data => {
         this.isRequesting = false;
         if (data &&
@@ -123,6 +123,7 @@ export class BurnCoinComponent implements OnInit , AfterContentInit {
     this.isRequesting = true;
     this.coinApiService.burnCoin(
       coin['coin_value'],
+      localStorage.getItem('secretkey'),
       coin['salt'],
       coin['coin_commitment_index'],
       coin['coin_commitment'],

@@ -10,7 +10,9 @@ much from a standard linux kernel for this to work efficiently with Docker.
 import path from 'path';
 import { Docker } from 'node-docker-api';
 import { readFileSync } from 'jsonfile';
-import config from 'config';
+import { getProps } from './config';
+
+const config = getProps();
 
 const docker = new Docker({
   socketPath: '/var/run/docker.sock',
@@ -56,13 +58,13 @@ async function runContainer() {
 }
 
 /**
-Used by the zkp/code/index.js
+Used by the tools-tar-creator.js
 Create and start a container using the zokrates image and make it durable
 */
 async function runContainerMounted(_hostDirPath) {
   // if we're running this under docker-compose, the input directory is fixed, otherwise we need to set it:
   console.log(`ZoKrates running with Nodejs environment ${process.env.NODE_ENV}`);
-  const hostDirPath = process.env.NODE_ENV !== 'setup' ? config.zkpCodeVolume : _hostDirPath;
+  const hostDirPath = process.env.NODE_ENV !== 'setup' ? config.zkp.volume : _hostDirPath;
   // We mount from the safe_dir, to avoid accidental deletion or overwriting of the oringinal files that sit in config.ZOKRATES_HOST_CODE_DIRPATH_REL.
   // We mount to a new 'code' folder in the container. We can't mount to the 'outputs' folder, because we'll overwrite the zokrates app.
   console.log(
@@ -98,6 +100,11 @@ async function killContainer(container) {
   });
 }
 
+/**
+This function and the following ones are direct equivalents of the corresponding
+ZoKrates function.  They return Promises that resolve to the output (stdout, stderr)
+from ZoKrates.
+*/
 async function compile(container, codeFile) {
   console.log('Compiling code in the container - this can take some minutes...');
   const exec = await container.exec.create({
@@ -114,40 +121,25 @@ async function compile(container, codeFile) {
 }
 
 async function computeWitness(container, a, zkpPath) {
-  console.log('\nCompute-witness...');
-
-  let exec;
-  // handle the case of debugging compute-witness through the setup tool (where no output path is specified):
-  if (!zkpPath) {
-    // then we're debugging
-    exec = await container.exec.create({
-      Cmd: [config.ZOKRATES_APP_FILEPATH_ABS, 'compute-witness', '-a', ...a],
-      AttachStdout: true,
-      AttachStderr: true,
-    });
-  } else {
-    console.log('./zokrates compute-witness', '-a', ...a, '-i', `code/${zkpPath}out`);
-    console.log(
-      `(you can paste the above line into the container to debug the 'compute-witness' step)`,
-    );
-    exec = await container.exec.create({
-      Cmd: [
-        config.ZOKRATES_APP_FILEPATH_ABS,
-        'compute-witness',
-        '-a',
-        ...a,
-        '-i',
-        path.resolve(config.ZOKRATES_CONTAINER_CODE_DIRPATH_ABS, zkpPath, 'out'),
-      ],
-      AttachStdout: true,
-      AttachStderr: true,
-    });
-  }
+  console.log('\nCompute-witness: Executing the program C(w,x)');
+  console.log('a ', ...a);
+  const exec = await container.exec.create({
+    Cmd: [
+      config.ZOKRATES_APP_FILEPATH_ABS,
+      'compute-witness',
+      '-a',
+      ...a,
+      '-i',
+      path.resolve(config.ZOKRATES_CONTAINER_CODE_DIRPATH_ABS, zkpPath, 'out'),
+    ],
+    AttachStdout: true,
+    AttachStderr: true,
+  });
   return promisifyStream(await exec.start(), 'compute-witness'); // return a promisified stream
 }
 
 /**
-@param {string} b - OPTIONAL argument, for the zkp/code/index.js to specify the backend
+@param {string} b - OPTIONAL argument, for the tools-trusted-setup to specify the backend
 */
 async function setup(container, b = config.ZOKRATES_BACKEND) {
   console.log('Setup: computing (pk,vk) := G(C,toxic) - this can take many minutes...');
@@ -163,7 +155,7 @@ async function setup(container, b = config.ZOKRATES_BACKEND) {
 /* TODO - the new zokrates outputs the Proof into a proof.json file, so we won't need the below Regex code to extract the proof.
  */
 /**
-@param {string} b - OPTIONAL argument, for the zkp/code/index.js to specify the backend. For regular ./nightfall runs, the backend defaults to config.ZOKRATES_BACKEND, so the b parameter won't get used.
+@param {string} b - OPTIONAL argument, for the tools-trusted-setup to specify the backend. For regular ./nightfall runs, the backend defaults to config.ZOKRATES_BACKEND, so the b parameter won't get used.
 */
 async function generateProof(container, b = config.ZOKRATES_BACKEND, zkpPath) {
   console.log('\nGenerating Proof := P(pk,w,x)');
@@ -210,10 +202,6 @@ async function generateProof(container, b = config.ZOKRATES_BACKEND, zkpPath) {
   proof.A = proof.a; // our code expects uppercase keys
   proof.B = proof.b;
   proof.C = proof.c;
-  delete proof.a;
-  delete proof.b;
-  delete proof.c;
-
   return proof;
 }
 

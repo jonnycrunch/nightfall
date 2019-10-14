@@ -1,15 +1,16 @@
 /* eslint-disable camelcase */
 
 import { Router } from 'express';
-import utils from 'zkp-utils';
+import Utils from 'zkp-utils';
 import fTokenController from '../f-token-controller';
 
+const utils = Utils('/app/config/stats.json');
 const router = Router();
 
 async function mint(req, res, next) {
   const { address } = req.headers;
   const { A, pk_A } = req.body;
-  const S_A = await utils.rndHex(32);
+  const S_A = await utils.rndHex(27);
 
   try {
     const [coin, coin_index] = await fTokenController.mint(A, pk_A, S_A, address);
@@ -27,8 +28,8 @@ async function mint(req, res, next) {
 async function transfer(req, res, next) {
   const { address } = req.headers;
   const { C, D, E, F, pk_B, S_C, S_D, sk_A, z_C, z_C_index, z_D, z_D_index } = req.body;
-  const S_E = await utils.rndHex(32);
-  const S_F = await utils.rndHex(32);
+  const S_E = await utils.rndHex(27);
+  const S_F = await utils.rndHex(27);
   try {
     const { z_E, z_E_index, z_F, z_F_index, txObj } = await fTokenController.transfer(
       C,
