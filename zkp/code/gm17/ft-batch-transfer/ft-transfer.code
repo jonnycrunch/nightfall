@@ -54,20 +54,12 @@ def unpackHash(field p)->(field[256]):
 	field[256] hash = unpack256(p)
 	return hash
 
-<<<<<<< Updated upstream
-//truncate a 256 bit hash down to 216 bits, returning as 256 bits padded with zeros
-=======
 //'truncate' a 256 bit hash down to 216 bits, returning as 256 bits padded with zeros
->>>>>>> Stashed changes
 //obviously this is easy to adjust to accommodate other bit lengths than 216.
 //This approach lets us use a 256 padding scheme for the sha hashing, rather than a 216 bit
 //scheme, which is more flexible should we wish to change the 216 bits to something else -
 // we won't need to recalculate all the padding values!
-<<<<<<< Updated upstream
-def truncate(field[256] sha)->(field[256]):
-=======
 def zeroMSBs(field[256] sha)->(field[256]):
->>>>>>> Stashed changes
 	return [...[0;40], ...sha[40..256]]
 
 // note that this concatenate function expects fields rather than binary as inputs.
@@ -141,21 +133,12 @@ def main(field publicInputHash, private field inputValue, private field secretKe
 	field[256] inputSaltBits = unpackHash(inputSalt)
 	field[512] preimage512 = concatenate256x256(inputSaltBits, secretKeyABits)
 	//check that we have correctly provided a public nullifier
-<<<<<<< Updated upstream
-	unpackHash(nullifier) == truncate(sha256of1024(preimage512[0..256], preimage512[256..512], padding512To1024[0..256], padding512To1024[256..512]))
-
-	// H(inputValue|publicKeyA|inputSalt) = Alices commitment is in the Merkle Tree
-
-	// Calculation of publicKeyA from H(secretKeyA) - truncated to 216 significant bits
-	field[256] publicKeyABits = truncate(sha256of512(secretKeyABits, padding256To512))
-=======
 	unpackHash(nullifier) == zeroMSBs(sha256of1024(preimage512[0..256], preimage512[256..512], padding512To1024[0..256], padding512To1024[256..512]))
 
 	// H(inputValue|publicKeyA|inputSalt) = Alices commitment is in the Merkle Tree
 
 	// Calculation of publicKeyA from H(secretKeyA) - zeroMSBsd to 216 significant bits
 	field[256] publicKeyABits = zeroMSBs(sha256of512(secretKeyABits, padding256To512))
->>>>>>> Stashed changes
 
 	// And calculation of input commitment
 	field[128] inputValueBits = unpack128(inputValue)
@@ -172,11 +155,7 @@ def main(field publicInputHash, private field inputValue, private field secretKe
 		hash = sha256of512(preimage512[0..256], preimage512[256..512])
 	endfor
 	// check we have indeed recovered the root:
-<<<<<<< Updated upstream
-	unpackHash(root) == truncate(hash)
-=======
 	unpackHash(root) == zeroMSBs(hash)
->>>>>>> Stashed changes
 
 	// Next up - prove that value is in commitment for all output commitments
 
@@ -189,11 +168,7 @@ def main(field publicInputHash, private field inputValue, private field secretKe
 	for field i in 0..20 do
 		preimage640 = concatenate128x256x256(unpack128(values[i]), unpackHash(publicKeys[i]), unpackHash(salts[i]))
 		preimage1024 = [...preimage640, ...padding640To1024]
-<<<<<<< Updated upstream
-		field[256] commitmentBitsCheck = truncate(sha256of1024(preimage1024[0..256], preimage1024[256..512], preimage1024[512..768], preimage1024[768..1024])) // commitmentE
-=======
 		field[256] commitmentBitsCheck = zeroMSBs(sha256of1024(preimage1024[0..256], preimage1024[256..512], preimage1024[512..768], preimage1024[768..1024])) // commitmentE
->>>>>>> Stashed changes
 		commitmentBitsCheck == unpackHash(commitments[i]) // valid commitment check
 		total = total + values[i]
 		field[128] valueBits = unpack128(values[i])
@@ -206,11 +181,7 @@ def main(field publicInputHash, private field inputValue, private field secretKe
 	// Check that the 'public inputs' hash to the publicInputHash: - TODO
 
 	field[5632] preimage5632 = concatenateFields256xx22([root, nullifier, ...commitments])
-<<<<<<< Updated upstream
-	field[256] publicInputHashBitsCheck = truncate(sha256of6144(preimage5632[0..256], preimage5632[256..512], preimage5632[512..768], preimage5632[768..1024], preimage5632[1024..1280], preimage5632[1280..1536], preimage5632[1536..1792], preimage5632[1792..2048], preimage5632[2048..2304], preimage5632[2304..2560], preimage5632[2560..2816], preimage5632[2816..3072], preimage5632[3072..3328], preimage5632[3328..3584], preimage5632[3584..3840], preimage5632[3840..4096], preimage5632[4096..4352], preimage5632[4352..4608], preimage5632[4608..4864], preimage5632[4864..5120], preimage5632[5120..5376], preimage5632[5376..5632], padding512To1024[0..256], padding512To1024[256..512]))
-=======
 	field[256] publicInputHashBitsCheck = zeroMSBs(sha256of6144(preimage5632[0..256], preimage5632[256..512], preimage5632[512..768], preimage5632[768..1024], preimage5632[1024..1280], preimage5632[1280..1536], preimage5632[1536..1792], preimage5632[1792..2048], preimage5632[2048..2304], preimage5632[2304..2560], preimage5632[2560..2816], preimage5632[2816..3072], preimage5632[3072..3328], preimage5632[3328..3584], preimage5632[3584..3840], preimage5632[3840..4096], preimage5632[4096..4352], preimage5632[4352..4608], preimage5632[4608..4864], preimage5632[4864..5120], preimage5632[5120..5376], preimage5632[5376..5632], padding512To1024[0..256], padding512To1024[256..512]))
->>>>>>> Stashed changes
 
 	publicInputHashBits == publicInputHashBitsCheck
 
