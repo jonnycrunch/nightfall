@@ -44,11 +44,13 @@ depth row  width  st#     end#
   event Mint(uint256 amount, bytes32 commitment, uint256 commitment_index);
   event Transfer(bytes32 nullifier1, bytes32 nullifier2, bytes32 commitment1, uint256 commitment1_index, bytes32 commitment2, uint256 commitment2_index);
   event Burn(uint256 amount, address payTo, bytes32 nullifier);
+  event SimpleBatchTransfer(bytes32 nullifier, bytes32[20] commitments, uint256 commitment_index)
 
   event VerifierChanged(address newVerifierContract);
   event VkIdsChanged(bytes32 mintVkId, bytes32 transferVkId, bytes32 burnVkId);
 
-
+  uint constant bitLength = 216; // the number of LSB that we use in a hash
+  uint constant batchProofSize = 20; // the number of output commitments in the batch transfer proof
   uint constant merkleWidth = 4294967296; //2^32
   uint constant merkleDepth = 33; //33
   uint private balance = 0;
@@ -103,10 +105,11 @@ depth row  width  st#     end#
   /**
   Sets the vkIds (as registered with the Verifier Registry) which correspond to 'mint', 'transfer' and 'burn' computations respectively
   */
-  function setVkIds(bytes32 _mintVkId, bytes32 _transferVkId, bytes32 _burnVkId) external onlyOwner {
+  function setVkIds(bytes32 _mintVkId, bytes32 _transferVkId, bytes32 _simpleBatchTransferVkId, bytes32 _burnVkId) external onlyOwner {
       //ensure the vkId's have been registered:
       require(_mintVkId == verifierRegistry.getVkEntryVkId(_mintVkId), "Mint vkId not registered.");
       require(_transferVkId == verifierRegistry.getVkEntryVkId(_transferVkId), "Transfer vkId not registered.");
+      require(_simpleBatchTransferVkId == verifierRegistry.getVkEntryVkId(_simpleBatchTransferVkId), "SimpleBatchTransfer vkId not registered.");
       require(_burnVkId == verifierRegistry.getVkEntryVkId(_burnVkId), "Burn vkId not registered.");
 
       //store the vkIds
@@ -195,10 +198,43 @@ depth row  width  st#     end#
       leafIndex = merkleWidth - 1 + leafCount; //specify the index of the commitment within the merkleTree
       merkleTree[leafIndex] = bytes27(_commitmentF<<40); //add the commitment to the merkleTree
       latestRoot = updatePathToRoot(leafIndex);//recalculate the root of the merkleTree as it's now different
-      
+
       roots[latestRoot] = latestRoot; //and save the new root to the list of roots
 
       emit Transfer(_nullifierC, _nullifierD, _commitmentE, leafCount - 1, _commitmentF, leafCount++);
+  }
+
+  /**
+  The transfer function transfers 20 commitments to new owners
+  */
+  function simpleBatchransfer(uint256[] calldata _proof, uint256[] calldata _inputs, bytes32 _vkId, bytes32 _root, bytes32 _nullifier, bytes32[20] _commitments) external {
+
+      require(_vkId == simpleBatchTransferVkId, "Incorrect vkId");
+
+      // Check that the publicInputHash equals the hash of the 'public inputs':
+      bytes32 publicInputHash = _inputs[0];
+      bytes32 publicInputHashCheck = zeroMSBs(bytes32(sha256(abi.encodePacked(_root, _nullifier, _commitments))));
+      require(publicInputHashCheck == publicInputHash, "publicInputHash cannot be reconciled");
+
+      // verify the proof
+      bool result = verifier.verify(_proof, _inputs, _vkId);
+      require(result, "The proof has not been verified by the contract");
+
+      // check inputs vs on-chain states
+      require(roots[_root] == _root, "The input root has never been the root of the Merkle Tree");
+      require(nullifiers[_nullifier] == 0, "The commitment being spent has already been nullified!");
+
+      // update contract states
+      nullifiers[_nullifier] = _nullifier; //remember we spent it
+
+      for (uint i = 0; i < batchProofSize; i++){
+        commitments[_commitments[i]] = _commitments[i]; //add the commitment to the list of commitments
+        uint256 leafIndex = merkleWidth - 1 + leafCount++; //specify the index of the commitment within the merkleTree
+        merkleTree[leafIndex] = bytes27(_commitmentE<<40); //add the commitment to the merkleTree
+        updatePathToRoot(leafIndex);
+      }
+      roots[latestRoot] = latestRoot; //and save the new root to the list of roots
+      emit SimpleBatchTransfer(bytes32 nullifier, bytes32[20] commitments, uint256 leafCount++)
   }
 
 
@@ -271,6 +307,12 @@ depth row  width  st#     end#
 
   function packToUint256(uint256 low, uint256 high) private pure returns (uint256) {
       return uint256((bytes32(high)<<128) | bytes32(low));
+  }
+
+  //function to zero out the b most siginficant bits
+  function zeroMSBs(bytes32 value) private pure returns (bytes32) {
+    unint256 shift = 256 - bitLength;
+    return (value<<shift)>>shift;
   }
 
 }

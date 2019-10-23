@@ -279,10 +279,11 @@ function binToDec(binStr) {
 
 /** Preserves the magnitude of a hex number in a finite field, even if the order of the field is smaller than hexStr. hexStr is converted to decimal (as fields work in decimal integer representation) and then split into chunks of size packingSize. Relies on a sensible packing size being provided (ZoKrates uses packingSize = 128).
  *if the result has fewer elements than it would need for compatibiity with the dsl, it's padded to the left with zero elements
+ * You can now send in a bigint rather than a hex string as we're moving to prefer BigInts
  */
 function hexToFieldPreserve(hexStr, packingSize, packets, silenceWarnings) {
   let bitsArr = [];
-  bitsArr = splitHexToBitsN(strip0x(hexStr).toString(), packingSize.toString());
+  bitsArr = splitHexToBitsN(strip0x(hexStr.toString(16)), packingSize.toString());
 
   let decArr = []; // decimal array
   decArr = bitsArr.map(item => binToDec(item.toString()));
@@ -494,20 +495,18 @@ function concatenateItems(...items) {
 
 /**
 Utility function:
-hashes a concatenation of items but it does it by
-breaking the items up into 432 bit chunks, hashing those, plus any remainder
-and then repeating the process until you end up with a single hash.  That way
-we can generate a hash without needing to use more than a single sha round.  It's
-not the same value as we'd get using rounds but it's at least doable.
+hashes an item. It can cope with hex strings or bigints, returning the same type
+as it gets
 */
 function hash(item) {
-  const preimage = strip0x(item);
+  const preimage = strip0x(item.toString(16));
 
   const h = `0x${crypto
     .createHash('sha256')
     .update(preimage, 'hex')
     .digest('hex')
     .slice(-(inputsHashLength * 2))}`;
+  if (typeof item === 'bigint') return BigInt(h); // eslint-disable-line valid-typeof
   return h;
 }
 
@@ -525,13 +524,14 @@ slice: [begin value] outputs the items in the array on and after the 'begin valu
 */
 function concatenateThenHash(...items) {
   const concatvalue = items
-    .map(item => Buffer.from(strip0x(item), 'hex'))
+    .map(item => Buffer.from(strip0x(item.toString(16)), 'hex'))
     .reduce((acc, item) => concatenate(acc, item));
 
   const h = `0x${crypto
     .createHash('sha256')
     .update(concatvalue, 'hex')
     .digest('hex')}`;
+  if (typeof items[0] === 'bigint') return BigInt(h); // eslint-disable-line valid-typeof
   return h;
 }
 

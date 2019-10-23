@@ -158,6 +158,61 @@ async function transfer(
 }
 
 /**
+This function transfers n commitments to someone else (n=20). It relies on the transfer
+key and the transfer input vector having been input and also vkx having been pre-
+computed.
+@param {array} proof - the proof associated with transfer
+@param {array} inputs - the public inputs associated with the proof (actually this is now a single hash)
+@param {string} vkId - a unique id for the verifiying key against which the proof and inputs will be verified
+@param {string} account - the account that you are transacting from
+@param {contract} fTokenShield - an instance of the CoinShield contract
+@return {array} coinEIndex - the indices of the z_E tokens within the on-chain Merkle Tree
+@returns {object} transferResponse - a promise that resolves into the transaction hash
+*/
+async function simpleFungibleBatchTransfer(
+  proof,
+  inputs,
+  vkId,
+  root,
+  nullifierC,
+  commitmentE,
+  _account,
+  fTokenShield,
+) {
+  const account = utils.ensure0x(_account);
+
+  console.group('Batch transferring within the Shield contract');
+
+  console.log('proof:');
+  console.log(proof);
+  console.log('inputs:');
+  console.log(inputs);
+  console.log(`vkId: ${vkId}`);
+
+  const txReceipt = await fTokenShield.simpleFungibleBatchTransfer(
+    proof,
+    inputs,
+    vkId,
+    root,
+    nullifierC,
+    commitmentE,
+    {
+      from: account,
+      gas: 6500000,
+      gasPrice: config.GASPRICE,
+    },
+  );
+  // This will be an array now - need to handle that with a slice
+  const coinEIndex = txReceipt.logs[0].args.commitment_indices; // log for: event Transfer
+
+  const newRoot = await fTokenShield.latestRoot();
+  console.log(`Merkle Root after transfer: ${newRoot}`);
+  console.groupEnd();
+
+  return [coinEIndex, txReceipt];
+}
+
+/**
 This function burns a commitment (i.e recovers the original ERC-20 funds)
 and returns a promise that will resolve to the tx hash.  It relies on the burn
 key and the burn input vector having been input and also vkx having been pre-
@@ -223,6 +278,7 @@ async function checkCorrectness(C, pk, S, z, zIndex, fTokenShield) {
 export default {
   mint,
   transfer,
+  simpleFungibleBatchTransfer,
   burn,
   registerVk,
   registerVerifierContract,

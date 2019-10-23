@@ -135,6 +135,7 @@ async function vkController() {
   await loadVk(config.FT_MINT_VK, 'MintCoin', account);
   await loadVk(config.FT_TRANSFER_VK, 'TransferCoin', account);
   await loadVk(config.FT_BURN_VK, 'BurnCoin', account);
+  await loadVk(config.FT_SIMPLE_BATCH_TRANSFER_VK, 'SimpleBatchTransferCoin', account);
 
   await setVkIds(account);
 

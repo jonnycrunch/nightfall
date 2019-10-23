@@ -7,36 +7,22 @@ arbitrary amounts of currency in zero knowlege.
 @author westlad, Chaitanya-Konda, iAmMichaelConnor
 */
 
-import Web3 from 'web3';
-import contract from 'truffle-contract';
-import jsonfile from 'jsonfile';
 import config from 'config';
+import {
+  web3,
+  FTokenShield,
+  VerifierRegistry,
+  Verifier,
+  FToken,
+  jsonfile,
+} from 'contract-abstractions';
+import { computeProof } from 'zokrates';
 import zkp from './f-token-zkp';
-import zokrates from './zokrates';
 import cv from './compute-vectors';
 import Element from './Element';
 
 const utils = require('zkp-utils');
 
-const web3 = new Web3(
-  Web3.givenProvider || new Web3.providers.HttpProvider(config.get('web3ProviderURL')),
-);
-
-const FTokenShield = contract(jsonfile.readFileSync('./build/contracts/FTokenShield.json'));
-FTokenShield.setProvider(web3.currentProvider);
-
-const VerifierRegistry = contract(
-  jsonfile.readFileSync('./build/contracts/Verifier_Registry.json'),
-);
-VerifierRegistry.setProvider(web3.currentProvider);
-
-const Verifier = contract(jsonfile.readFileSync('./build/contracts/GM17_v0.json'));
-Verifier.setProvider(web3.currentProvider);
-
-const FToken = contract(jsonfile.readFileSync('./build/contracts/FToken.json'));
-FToken.setProvider(web3.currentProvider);
-
-let container;
 const shield = {}; // this field holds the current Shield contract instance.
 
 async function unlockAccount(address, password) {
@@ -152,45 +138,6 @@ async function getTokenInfo(address) {
   const symbol = await fToken.symbol.call();
   const name = await fToken.name.call();
   return { symbol, name };
-}
-
-/**
-This function needs to be run *before* computing any proofs in order to deploy
-the necessary code to the docker container, after instantiating the same. It
-will be called automatically by computeProof if it detects tha there is no container
-being instantiated.
-@param {string} hostDir - the directory on the host to mount into the runContainerMounted
-*/
-async function setupComputeProof(hostDir) {
-  container = await zokrates.runContainerMounted(hostDir);
-}
-
-/**
-This function computes a proof that you own a coin, using as few parameters
-as possible.  If you haven't yet deployed the code to the docker container to
-enable this computation, this routine will call setupComputeProof to do that for
-you.
-@param {array} elements - array containing all of the public and private parameters the proof needs
-@param {string} hostDir - the directory on the host to mount into the runContainerMounted
-@returns the proof object
-*/
-async function computeProof(elements, hostDir) {
-  if (container === undefined || container === null) await setupComputeProof(hostDir);
-
-  console.log(`Container id: ${container.id}`);
-  console.log(`To connect to the container manually: 'docker exec -ti ${container.id} bash'`);
-
-  await zokrates.computeWitness(container, cv.computeVectors(elements), hostDir);
-
-  const proof = await zokrates.generateProof(container, undefined, hostDir);
-
-  console.group(`Proof: ${JSON.stringify(proof, undefined, 2)}`);
-  console.groupEnd();
-
-  zokrates.killContainer(container);
-  container = null; // clear out the container for the next run
-
-  return proof;
 }
 
 /**
@@ -340,6 +287,8 @@ async function transfer(
   account,
 ) {
   console.group('\nIN TRANSFER...');
+
+  if (typeof pkB === 'object') throw new Error('You need to call a batch-transfer');
 
   // due to limitations in the size of the adder implemented in the proof dsl,
   // we need C+D and E+F to easily fit in <128 bits (16 bytes). They could of course
@@ -639,7 +588,6 @@ export default {
   transfer,
   mint,
   computeProof,
-  setupComputeProof,
   getBalance,
   getFTAddress,
   buyFToken,

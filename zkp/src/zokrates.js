@@ -11,10 +11,13 @@ import path from 'path';
 import { Docker } from 'node-docker-api';
 import { readFileSync } from 'jsonfile';
 import config from 'config';
+import { computeVectors } from 'compute-vectors';
 
 const docker = new Docker({
   socketPath: '/var/run/docker.sock',
 });
+
+let container; // used to hold a reference to the Zokrates container
 
 /** create a promise that resolves to the output of a stream when the stream
 ends.  It also does some ZoKrates-specific error checking because not all 'errors'
@@ -45,7 +48,7 @@ Create and start a container using the zokrates image and make it durable
 */
 async function runContainer() {
   console.log('Running the container');
-  const container = await docker.container.create({
+  container = await docker.container.create({
     Image: config.ZOKRATES_IMAGE,
     Cmd: ['/bin/bash', '-c', 'tail -f /var/log/alternatives.log'],
   });
@@ -70,7 +73,7 @@ async function runContainerMounted(_hostDirPath) {
   );
 
   try {
-    const container = await docker.container.create({
+    container = await docker.container.create({
       Image: config.ZOKRATES_IMAGE,
       HostConfig: {
         Binds: [`${hostDirPath}:${config.ZOKRATES_CONTAINER_CODE_DIRPATH_ABS}:cached`],
@@ -90,7 +93,7 @@ async function runContainerMounted(_hostDirPath) {
 /**
 Stop and remove the container after you have finished
 */
-async function killContainer(container) {
+async function killContainer() {
   console.log('Killing the container');
   await container.stop();
   return container.delete({
@@ -98,7 +101,7 @@ async function killContainer(container) {
   });
 }
 
-async function compile(container, codeFile) {
+async function compile(codeFile) {
   console.log('Compiling code in the container - this can take some minutes...');
   const exec = await container.exec.create({
     Cmd: [
@@ -113,7 +116,7 @@ async function compile(container, codeFile) {
   return promisifyStream(await exec.start(), 'compile'); // return a promisified stream
 }
 
-async function computeWitness(container, a, zkpPath) {
+async function computeWitness(a, zkpPath) {
   console.log('\nCompute-witness...');
 
   let exec;
@@ -149,7 +152,7 @@ async function computeWitness(container, a, zkpPath) {
 /**
 @param {string} b - OPTIONAL argument, for the zkp/code/index.js to specify the backend
 */
-async function setup(container, b = config.ZOKRATES_BACKEND) {
+async function setup(b = config.ZOKRATES_BACKEND) {
   console.log('Setup: computing (pk,vk) := G(C,toxic) - this can take many minutes...');
 
   const exec = await container.exec.create({
@@ -165,7 +168,7 @@ async function setup(container, b = config.ZOKRATES_BACKEND) {
 /**
 @param {string} b - OPTIONAL argument, for the zkp/code/index.js to specify the backend. For regular ./nightfall runs, the backend defaults to config.ZOKRATES_BACKEND, so the b parameter won't get used.
 */
-async function generateProof(container, b = config.ZOKRATES_BACKEND, zkpPath) {
+async function generateProof(b = config.ZOKRATES_BACKEND, zkpPath) {
   console.log('\nGenerating Proof := P(pk,w,x)');
 
   console.log('Backend being used', b);
@@ -220,13 +223,52 @@ async function generateProof(container, b = config.ZOKRATES_BACKEND, zkpPath) {
 /**
 @param {string} b - OPTIONAL argument, for the tar creator to specify the backend
 */
-async function exportVerifier(container, b = config.ZOKRATES_BACKEND) {
+async function exportVerifier(b = config.ZOKRATES_BACKEND) {
   const exec = await container.exec.create({
     Cmd: [config.ZOKRATES_APP_FILEPATH_ABS, 'export-verifier', '--proving-scheme', b],
     AttachStdout: true,
     AttachStderr: true,
   });
   return promisifyStream(await exec.start(), 'export-verifier'); // return a promisified stream
+}
+
+/**
+This function needs to be run *before* computing any proofs in order to deploy
+the necessary code to the docker container, after instantiating the same. It
+will be called automatically by computeProof if it detects tha there is no container
+being instantiated.
+@param {string} hostDir - the directory on the host to mount into the runContainerMounted
+*/
+async function setupComputeProof(hostDir) {
+  container = await runContainerMounted(hostDir);
+}
+
+/**
+This is a convenience function to compute a witness and generate a proof in one hit.
+If you haven't yet deployed the code to the docker container to
+enable this computation, this routine will call setupComputeProof to do that for
+you.
+@param {array} elements - array containing all of the public and private parameters the proof needs
+@param {string} hostDir - the directory on the host to mount into the runContainerMounted
+@returns the proof object
+*/
+async function computeProof(elements, hostDir) {
+  if (container === undefined || container === null) await setupComputeProof(hostDir);
+
+  console.log(`Container id: ${container.id}`);
+  console.log(`To connect to the container manually: 'docker exec -ti ${container.id} bash'`);
+
+  await computeWitness(computeVectors(elements), hostDir);
+
+  const proof = await generateProof(undefined, hostDir);
+
+  console.group(`Proof: ${JSON.stringify(proof, undefined, 2)}`);
+  console.groupEnd();
+
+  killContainer();
+  container = null; // clear out the container for the next run
+
+  return proof;
 }
 
 export default {
@@ -239,4 +281,6 @@ export default {
   runContainerMounted,
   killContainer,
   promisifyStream,
+  computeProof,
+  setupComputeProof,
 };

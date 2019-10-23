@@ -29,6 +29,7 @@ ABS - absolute path
 export default {
   INPUTS_HASHLENGTH: 32, // expected length of an input to a hash in bytes
   MERKLE_HASHLENGTH: 27, // expected length of inputs to hashes up the merkle tree, in bytes
+  BATCH_PROOF_SIZE: 20, // the number of transactions we batch into a batched proof
   ZOKRATES_IMAGE: 'zokrates/zokrates:0.4.11', // 20Nov2018", //tag of Zorates docker image
   ZKP_PWD: 'zkp',
   ZKP_SRC_REL: 'src/',
@@ -62,6 +63,7 @@ export default {
   FT_MINT_DIR: 'gm17/ft-mint/',
   FT_TRANSFER_DIR: 'gm17/ft-transfer/',
   FT_BURN_DIR: 'gm17/ft-burn/',
+  FT_SIMPLE_BATCH_TRANSFER_DIR: 'gm17/ft-batch-transfer/',
 
   AGREE_CONTRACT_DIR: '/code/gm17/agree-contract/',
 
@@ -72,6 +74,7 @@ export default {
   FT_MINT_VK: './code/gm17/ft-mint/ft-mint-vk.json',
   FT_TRANSFER_VK: './code/gm17/ft-transfer/ft-transfer-vk.json',
   FT_BURN_VK: './code/gm17/ft-burn/ft-burn-vk.json',
+  FT_SIMPLE_BATCH_TRANSFER_VK: './code/gm17/ft-batch-transfer/ft-transfer-vk.json',
 
   AGREE_CONTRACT_VK: './code/gm17/agree-contract/agree-contract-vk.json',
 
