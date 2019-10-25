@@ -4,38 +4,59 @@ import utils from 'zkp-utils';
 import AccountUtils from '../src/account-utils/account-utils';
 
 import controller from '../src/f-token-controller';
+import vk from '../src/vk-controller';
 
 jest.setTimeout(7200000);
 
+const C = '0x00000000000000000000000000000020'; // 128 bits = 16 bytes = 32 chars
+const D = '0x00000000000000000000000000000030';
+const E = '0x00000000000000000000000000000040';
+const F = '0x00000000000000000000000000000010'; // don't forget to make C+D=E+F
+const G = '0x00000000000000000000000000000030';
+const H = '0x00000000000000000000000000000020'; // these constants used to enable a second transfer
+const I = '0x00000000000000000000000000000050';
+const skA = '0x0000000000111111111111111111111111111111111111111111111111111111';
+const skB = '0x0000000000222222222222222222222222222222222222222222222222222222';
+let S_A_C;
+let S_A_D;
+let sAToBE;
+let sAToAF;
+let pkA;
+let pkB;
+const pkE = '0x0000000000111111111111111111111111111111111111111111111111111112';
+let Z_A_C;
+let Z_A_D;
+let S_B_G;
+let sBToEH;
+let sBToBI;
+let Z_B_G;
+let Z_B_E;
+let Z_A_F;
+// storage for z indexes
+let zInd1;
+let zInd2;
+let zInd3;
+
+beforeAll(async () => {
+  await vk.runController;
+  S_A_C = await utils.rndHex(32);
+  S_A_D = await utils.rndHex(32);
+  sAToBE = await utils.rndHex(32);
+  sAToAF = await utils.rndHex(32);
+  pkA = utils.ensure0x(utils.strip0x(utils.hash(skA)).padStart(32, '0'));
+  pkB = utils.ensure0x(utils.strip0x(utils.hash(skB)).padStart(32, '0'));
+  Z_A_C = utils.concatenateThenHash(C, pkA, S_A_C);
+  Z_A_D = utils.concatenateThenHash(D, pkA, S_A_D);
+  S_B_G = await utils.rndHex(32);
+  sBToEH = await utils.rndHex(32);
+  sBToBI = await utils.rndHex(32);
+  Z_B_G = utils.concatenateThenHash(G, pkB, S_B_G);
+  Z_B_E = utils.concatenateThenHash(E, pkB, sAToBE);
+  Z_A_F = utils.concatenateThenHash(F, pkA, sAToAF);
+});
+
 // eslint-disable-next-line no-undef
 describe('f-token-controller.js tests', () => {
-  const C = '0x00000000000000000000000000000020'; // 128 bits = 16 bytes = 32 chars
-  const D = '0x00000000000000000000000000000030';
-  const E = '0x00000000000000000000000000000040';
-  const F = '0x00000000000000000000000000000010'; // don't forget to make C+D=E+F
-  const skA = '0x111111111111111111111111111111111111111111111111111111';
-  const skB = '0x222222222222222222222222222222222222222222222222222222';
-  const S_A_C = '0x666666666666666666666666666666666666666666666666666666';
-  const S_A_D = '0x333333333333333333333333333333333333333333333333333333';
-  const sAToBE = '0x444444444444444444444444444444444444444444444444444444';
-  const sAToAF = '0x555555555555555555555555555555555555555555555555555555';
-  const pkA = utils.hash(skA);
-  const pkB = utils.hash(skB);
-  const Z_A_C = utils.concatenateThenHash(C, pkA, S_A_C);
-  const Z_A_D = utils.concatenateThenHash(D, pkA, S_A_D);
-  // these constants used to enable a second transfer:
-  const G = '0x00000000000000000000000000000030';
-  const H = '0x00000000000000000000000000000020';
-  const I = '0x00000000000000000000000000000050';
-  const S_B_G = '0x777777777777777777777777777777777777777777777777777777';
-  const sBToEH = '0x888888888888888888888888888888888888888888888888888888';
-  const sBToBI = '0x999999999999999999999999999999999999999999999999999999';
-  const Z_B_G = utils.concatenateThenHash(G, pkB, S_B_G);
-  const Z_B_E = utils.concatenateThenHash(E, pkB, sAToBE);
-  const pkE = '0x111111111111111111111111111111111111111111111111111112';
-  // And a burn
-  const Z_A_F = utils.concatenateThenHash(F, pkA, sAToAF);
-
   // Alice has C + D to start total = 50 ETH
   // Alice sends Bob E and gets F back (Bob has 40 ETH, Alice has 10 ETH)
   // Bob then has E+G at total of 70 ETH
@@ -84,18 +105,16 @@ describe('f-token-controller.js tests', () => {
     const accounts = await AccountUtils.getEthAccounts();
     console.log('Alices account ', (await controller.getBalance(accounts[0])).toNumber());
     const [zTest, zIndex] = await controller.mint(C, pkA, S_A_C, accounts[0]);
-
+    zInd1 = parseInt(zIndex, 10);
     expect(Z_A_C).toEqual(zTest);
-    expect(0).toEqual(parseInt(zIndex, 10));
     console.log(`Alice's account `, (await controller.getBalance(accounts[0])).toNumber());
   });
 
   test('Should mint another ERC-20 commitment Z_A_D for Alice for asset D', async () => {
     const accounts = await AccountUtils.getEthAccounts();
     const [zTest, zIndex] = await controller.mint(D, pkA, S_A_D, accounts[0]);
-
+    zInd2 = parseInt(zIndex, 10);
     expect(Z_A_D).toEqual(zTest);
-    expect(1).toEqual(parseInt(zIndex, 10));
     console.log(`Alice's account `, (await controller.getBalance(accounts[0])).toNumber());
   });
 
@@ -114,9 +133,9 @@ describe('f-token-controller.js tests', () => {
       sAToAF,
       skA,
       Z_A_C,
-      0,
+      zInd1,
       Z_A_D,
-      1,
+      zInd2,
       accounts[0],
     );
     // now Bob should have 40 (E) ETH
@@ -125,9 +144,8 @@ describe('f-token-controller.js tests', () => {
   test('Should mint another ERC-20 commitment Z_B_G for Bob for asset G', async () => {
     const accounts = await AccountUtils.getEthAccounts();
     const [zTest, zIndex] = await controller.mint(G, pkB, S_B_G, accounts[1]);
-
+    zInd3 = parseInt(zIndex, 10);
     expect(Z_B_G).toEqual(zTest);
-    expect(4).toEqual(parseInt(zIndex, 10));
   });
 
   test('Should transfer an ERC-20 commitment to Eve', async () => {
@@ -145,9 +163,9 @@ describe('f-token-controller.js tests', () => {
       sBToBI,
       skB,
       Z_B_E,
-      2,
+      zInd1 + 2,
       Z_B_G,
-      4,
+      zInd3,
       accounts[1],
     );
   });
@@ -158,7 +176,7 @@ describe('f-token-controller.js tests', () => {
     const bal = await controller.getBalance(accounts[0]);
     console.log('accounts[3]', bal1.toNumber());
     console.log('accounts[0]', bal.toNumber());
-    await controller.burn(F, skA, sAToAF, Z_A_F, 3, accounts[0], accounts[3]);
+    await controller.burn(F, skA, sAToAF, Z_A_F, zInd2 + 2, accounts[0], accounts[3]);
     const bal2 = await controller.getBalance(accounts[3]);
     console.log('accounts[3]', bal2.toNumber());
     expect(parseInt(F, 16)).toEqual(bal2 - bal1);

@@ -8,17 +8,11 @@ arbitrary amounts of currency in zero knowlege.
 */
 
 import config from 'config';
-import {
-  web3,
-  FTokenShield,
-  VerifierRegistry,
-  Verifier,
-  FToken,
-  jsonfile,
-} from 'contract-abstractions';
-import { computeProof } from 'zokrates';
+import jsonfile from 'jsonfile';
+import { web3, FTokenShield, VerifierRegistry, Verifier, FToken } from './contract-abstractions';
+import { computeProof } from './common-token-functions';
 import zkp from './f-token-zkp';
-import cv from './compute-vectors';
+import { computeVectors, computePath, checkRoot } from './compute-vectors';
 import Element from './Element';
 
 const utils = require('zkp-utils');
@@ -193,7 +187,7 @@ async function mint(A, pkA, S_A, account) {
   const publicInputHash = utils.concatenateThenHash(A, zA);
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -327,7 +321,7 @@ async function transfer(
   const zF = utils.concatenateThenHash(F, pkA, S_F);
 
   // we need the Merkle path from the token commitment to the root, expressed as Elements
-  const pathC = await cv.computePath(account, fTokenShield, zC, zCIndex);
+  const pathC = await computePath(account, fTokenShield, zC, zCIndex);
   const pathCElements = {
     elements: pathC.path.map(
       element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
@@ -336,7 +330,7 @@ async function transfer(
   };
   // console.log(`pathCElements.path:`, pathCElements.elements);
   // console.log(`pathCElements.positions:`, pathCElements.positions);
-  const pathD = await cv.computePath(account, fTokenShield, zD, zDIndex);
+  const pathD = await computePath(account, fTokenShield, zD, zDIndex);
   const pathDElements = {
     elements: pathD.path.map(
       element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
@@ -347,8 +341,8 @@ async function transfer(
   // console.log(`pathDlements.positions:`, pathDElements.positions);
 
   // Although we only strictly need the root to be reconciled within zokrates, it's easier to check and intercept any errors in js; so we'll first try to reconcole here:
-  cv.checkRoot(zC, pathC, root);
-  cv.checkRoot(zD, pathD, root);
+  checkRoot(zC, pathC, root);
+  checkRoot(zD, pathD, root);
 
   console.group('Existing Proof Variables:');
   const p = config.ZOKRATES_PACKING_SIZE;
@@ -378,7 +372,7 @@ async function transfer(
   const publicInputHash = utils.concatenateThenHash(root, nC, nD, zE, zF);
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -497,7 +491,7 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   const Nc = utils.concatenateThenHash(S_C, skA);
 
   // We need the Merkle path from the commitment to the root, expressed as Elements
-  const path = await cv.computePath(account, fTokenShield, zC, zCIndex);
+  const path = await computePath(account, fTokenShield, zC, zCIndex);
   const pathElements = {
     elements: path.path.map(
       element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
@@ -508,7 +502,7 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   // console.log(`pathElements.positions:`, pathElements.positions);
 
   // Although we only strictly need the root to be reconciled within zokrates, it's easier to check and intercept any errors in js; so we'll first try to reconcole here:
-  cv.checkRoot(zC, path, root);
+  checkRoot(zC, path, root);
 
   // Summarise values in the console:
   console.group('Existing Proof Variables:');
@@ -530,7 +524,7 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   const publicInputHash = utils.concatenateThenHash(root, Nc, C, payToLeftPadded); // notice we're using the version of payTo which has been padded to 256-bits; to match our derivation of publicInputHash within our zokrates proof.
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
   console.log('inputs:');
   console.log(inputs);
 

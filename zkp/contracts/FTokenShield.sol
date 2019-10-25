@@ -44,7 +44,7 @@ depth row  width  st#     end#
   event Mint(uint256 amount, bytes32 commitment, uint256 commitment_index);
   event Transfer(bytes32 nullifier1, bytes32 nullifier2, bytes32 commitment1, uint256 commitment1_index, bytes32 commitment2, uint256 commitment2_index);
   event Burn(uint256 amount, address payTo, bytes32 nullifier);
-  event SimpleBatchTransfer(bytes32 nullifier, bytes32[20] commitments, uint256 commitment_index)
+  event SimpleBatchTransfer(bytes32 nullifier, bytes32[20] commitments, uint256 commitment_index);
 
   event VerifierChanged(address newVerifierContract);
   event VkIdsChanged(bytes32 mintVkId, bytes32 transferVkId, bytes32 burnVkId);
@@ -72,6 +72,7 @@ depth row  width  st#     end#
   bytes32 public mintVkId;
   bytes32 public transferVkId;
   bytes32 public burnVkId;
+  bytes32 public simpleBatchTransferVkId;
 
   constructor(address _verifierRegistry, address _verifier, address _fToken) public {
       _owner = msg.sender;
@@ -115,6 +116,7 @@ depth row  width  st#     end#
       //store the vkIds
       mintVkId = _mintVkId;
       transferVkId = _transferVkId;
+      simpleBatchTransferVkId = _simpleBatchTransferVkId;
       burnVkId = _burnVkId;
 
       emit VkIdsChanged(mintVkId, transferVkId, burnVkId);
@@ -207,12 +209,12 @@ depth row  width  st#     end#
   /**
   The transfer function transfers 20 commitments to new owners
   */
-  function simpleBatchransfer(uint256[] calldata _proof, uint256[] calldata _inputs, bytes32 _vkId, bytes32 _root, bytes32 _nullifier, bytes32[20] _commitments) external {
+  function simpleBatchransfer(uint256[] calldata _proof, uint256[] calldata _inputs, bytes32 _vkId, bytes32 _root, bytes32 _nullifier, bytes32[20] calldata _commitments) external {
 
       require(_vkId == simpleBatchTransferVkId, "Incorrect vkId");
 
       // Check that the publicInputHash equals the hash of the 'public inputs':
-      bytes32 publicInputHash = _inputs[0];
+      bytes32 publicInputHash = bytes32(_inputs[0]);
       bytes32 publicInputHashCheck = zeroMSBs(bytes32(sha256(abi.encodePacked(_root, _nullifier, _commitments))));
       require(publicInputHashCheck == publicInputHash, "publicInputHash cannot be reconciled");
 
@@ -230,11 +232,11 @@ depth row  width  st#     end#
       for (uint i = 0; i < batchProofSize; i++){
         commitments[_commitments[i]] = _commitments[i]; //add the commitment to the list of commitments
         uint256 leafIndex = merkleWidth - 1 + leafCount++; //specify the index of the commitment within the merkleTree
-        merkleTree[leafIndex] = bytes27(_commitmentE<<40); //add the commitment to the merkleTree
+        merkleTree[leafIndex] = bytes27(_commitments[i]<<40); //add the commitment to the merkleTree
         updatePathToRoot(leafIndex);
       }
       roots[latestRoot] = latestRoot; //and save the new root to the list of roots
-      emit SimpleBatchTransfer(bytes32 nullifier, bytes32[20] commitments, uint256 leafCount++)
+      emit SimpleBatchTransfer(_nullifier, _commitments, leafCount++);
   }
 
 
@@ -311,7 +313,7 @@ depth row  width  st#     end#
 
   //function to zero out the b most siginficant bits
   function zeroMSBs(bytes32 value) private pure returns (bytes32) {
-    unint256 shift = 256 - bitLength;
+    uint256 shift = 256 - bitLength;
     return (value<<shift)>>shift;
   }
 

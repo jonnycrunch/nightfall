@@ -14,7 +14,7 @@ import utils from 'zkp-utils';
 import config from 'config';
 import zkp from './nf-token-zkp';
 import zokrates from './zokrates';
-import cv from './compute-vectors';
+import { computeVectors, computePath } from './compute-vectors';
 import Element from './Element';
 
 const web3 = new Web3(
@@ -204,7 +204,7 @@ async function computeProof(elements, hostDir) {
   console.log(`Container id: ${container.id}`);
   console.log(`To connect to the container manually: 'docker exec -ti ${container.id} bash'`);
 
-  await zokrates.computeWitness(container, cv.computeVectors(elements), hostDir);
+  await zokrates.computeWitness(container, computeVectors(elements), hostDir);
 
   const proof = await zokrates.generateProof(container, undefined, hostDir);
 
@@ -269,7 +269,7 @@ async function mint(A, pk_A, S_A, account) {
   const publicInputHash = utils.concatenateThenHash(A, z_A);
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -365,7 +365,7 @@ async function transfer(A, pk_B, S_A, S_B, sk_A, z_A, z_A_index, account) {
   );
 
   // we need the Merkle path from the token commitment to the root, expressed as Elements
-  const path = await cv.computePath(account, nfTokenShield, z_A, z_A_index).then(result => {
+  const path = await computePath(account, nfTokenShield, z_A, z_A_index).then(result => {
     return {
       elements: result.path.map(
         element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
@@ -400,7 +400,7 @@ async function transfer(A, pk_B, S_A, S_B, sk_A, z_A, z_A_index, account) {
   const publicInputHash = utils.concatenateThenHash(root, n, z_B);
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -500,7 +500,7 @@ async function burn(A, Sk_A, S_A, z_A, z_A_index, account, payTo) {
   const Na = utils.concatenateThenHash(S_A, Sk_A);
 
   // we need the Merkle path from the token commitment to the root, expressed as Elements
-  const path = await cv.computePath(account, nfTokenShield, z_A, z_A_index).then(result => {
+  const path = await computePath(account, nfTokenShield, z_A, z_A_index).then(result => {
     return {
       elements: result.path.map(
         element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
@@ -535,7 +535,7 @@ async function burn(A, Sk_A, S_A, z_A, z_A_index, account, payTo) {
   const publicInputHash = utils.concatenateThenHash(root, Na, A, payToLeftPadded); // notice we're using the version of payTo which has been padded to 256-bits; to match our derivation of publicInputHash within our zokrates proof.
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
