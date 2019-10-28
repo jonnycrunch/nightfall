@@ -2,19 +2,21 @@
 module containing functions specific to batched proofs
 */
 
-import { FTokenShield, VerifierRegistry, Verifier, jsonfile } from 'contract-abstractions';
-import zkp from 'f-token-zkp';
-import {
+import { FTokenShield, VerifierRegistry, Verifier } from './contract-abstractions';
+import zkp from './f-token-zkp';
+import conf from './config';
+import { computePath, computeVectors, checkRoot } from './compute-vectors';
+import { computeProof } from './common-token-functions';
+
+const utils = require('zkp-utils');
+
+const {
   BATCH_PROOF_SIZE,
   VK_IDS,
   MERKLE_HASHLENGTH,
   ZOKRATES_PACKING_SIZE,
   FT_SIMPLE_BATCH_TRANSFER_DIR,
-} from 'config';
-import { computeProof } from 'zokrates';
-import cv from 'compute-vectors';
-
-const utils = require('zkp-utils');
+} = conf;
 
 /**
 This function expects a BigInt and will set all bits longer than 'bits'
@@ -97,7 +99,7 @@ async function simpleFungibleBatchTransfer(_C, E, pkB, S_C, S_E, skA, zC, zCInde
     zE[i] = zeroMSBs(utils.concatenateThenHash(E[i], pkB[i], S_E[i]));
   }
   // we need the Merkle path from the token commitment to the root, expressed as Elements
-  const pathC = await cv.computePath(
+  const pathC = await computePath(
     account,
     fTokenShield,
     zC.toString(16).padStart(MERKLE_HASHLENGTH * 2, '0'), // computePath expects hex currently so convert BigInt
@@ -109,7 +111,7 @@ async function simpleFungibleBatchTransfer(_C, E, pkB, S_C, S_E, skA, zC, zCInde
   };
 
   // Although we only strictly need the root to be reconciled within zokrates, it's easier to check and intercept any errors in js; so we'll first try to reconcole here:
-  cv.checkRoot(zC.toString(16).padStart(MERKLE_HASHLENGTH * 2, '0'), pathC, root); // this function currently needs hex rather than BigInt
+  checkRoot(zC.toString(16).padStart(MERKLE_HASHLENGTH * 2, '0'), pathC, root); // this function currently needs hex rather than BigInt
 
   console.group('Existing Proof Variables:');
   const p = ZOKRATES_PACKING_SIZE;
@@ -132,7 +134,7 @@ async function simpleFungibleBatchTransfer(_C, E, pkB, S_C, S_E, skA, zC, zCInde
   const publicInputHash = zeroMSBs(utils.concatenateThenHash(BigInt(root), nC, ...zE));
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = cv.computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
