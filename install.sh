@@ -54,20 +54,33 @@ cd zkp-utils && npm ci && \
 cd ../zkp && npm ci && \
 
 # Lists of all existing proofs
-echo -e '\033[32mList of all existing proofs :\033[m'
-cd code/gm17/ && ls -1 -d */ && cd ../../
+echo -e '\033[32mList of all completed trusted setups :\033[m'
+setups=()
+[[ -f zkp/code/gm17/ft-mint/proving.key && -f zkp/code/gm17/ft-mint/verification.key ]] && setups+=('ft-mint')
+[[ -f zkp/code/gm17/nft-mint/proving.key && -f zkp/code/gm17/nft-mint/verification.key ]] && setups+=('nft-mint')
+[[ -f zkp/code/gm17/ft-transfer/proving.key && -f zkp/code/gm17/ft-transfer/verification.key ]] && setups+=('ft-transfer')
+[[ -f zkp/code/gm17/nft-transfer/proving.key && -f zkp/code/gm17/nft-transfer/verification.key ]] && setups+=('nft-transfer')
+[[ -f zkp/code/gm17/ft-burn/proving.key && -f zkp/code/gm17/ft-burn/verification.key ]] && setups+=('ft-burn')
+[[ -f zkp/code/gm17/nft-burn/proving.key && -f zkp/code/gm17/nft-burn/verification.key ]] && setups+=('nft-burn')
+for i in "${setups[@]}"
+do
+    echo $i
+done
+yn=''
 while true; do
-    read -p "Do you want to recreate all proofs? (y/n) : " yn
+    if [ $# -ne 0 ]
+    then
+        yn=$1
+    else
+        read -p "Do you want to recreate all trusted setups ? (y/n) : " yn    
+    fi
     case $yn in
         [Yy]* ) npm run setup-all && cd ../; break;;
-        [Nn]* ) read -p "Would you like to recreate any specific proof? (y/n) : " decision
-                if [ "$decision" = "y" ] || [ "$decision" = "Y"  ]; then
-                    echo -e '\033[32mList of all proofs :\033[m'
-                    echo -e '1.ft-mint\n2.nft-mint\n3.ft-transfer\n4.nft-transfer\n5.ft-burn\n6.nft-burn'
-                    echo -e 'Type the number of each proof as comma-separated'
-                    read -p '(use "1,2" to create proofs for ft-mint & nft-mint) : ' proofs
+        [Nn]* ) echo -e '\033[32mList of all trusted steups :\033[m'
+                echo -e '1.ft-mint\n2.nft-mint\n3.ft-transfer\n4.nft-transfer\n5.ft-burn\n6.nft-burn'
+                echo -e 'Type the number of each trusted setup seperated by comma'
+                read -p '(use "1,2" to create proofs for ft-mint & nft-mint) : ' proofs
                     proofCreation $proofs
-                fi
                 exit;;
         * ) echo "Please answer yes or no.";;
     esac
