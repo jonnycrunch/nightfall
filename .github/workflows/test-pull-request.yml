@@ -40,7 +40,7 @@ jobs:
       - name: Generate the keys and constraint files for Zero Knowledge Proofs
         run: |
           chmod -R 777 zkp/code/
-          npm run setupAll --y
+          npm run setupAll y
       - name: Remove ZoKrates Containers
         run: |
           docker stop $(docker ps -a -q)
@@ -74,7 +74,7 @@ jobs:
       - name: Generate the keys and constraint files for Zero Knowledge Proofs
         run: |
           chmod -R 777 zkp/code/
-          npm run setupAll --y
+          npm run setupAll y
       - name: Remove ZoKrates Containers
         run: |
           docker stop $(docker ps -a -q)
