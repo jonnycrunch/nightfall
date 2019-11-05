@@ -9,7 +9,7 @@ const router = Router();
 
 async function mint(req, res, next) {
   const { address } = req.headers;
-  const { A: tokenId, pk_A: ownerPublicKey } = req.body;
+  const { tokenId, ownerPublicKey } = req.body;
   const salt = await utils.rndHex(32);
   const vkId = await getVkId('MintToken');
   const { contractJson: nfTokenShieldJson, contractInstance: nfTokenShield } = await getContract(
@@ -42,12 +42,12 @@ async function mint(req, res, next) {
 
 async function transfer(req, res, next) {
   const {
-    A: tokenId,
-    pk_B: receiverPublicKey,
-    S_A: originalCommitmentSalt,
-    sk_A: senderSecretKey,
-    z_A: commitment,
-    z_A_index: commitmentIndex,
+    tokenId,
+    receiverPublicKey,
+    originalCommitmentSalt,
+    senderSecretKey,
+    commitment,
+    commitmentIndex,
   } = req.body;
   const newCommitmentSalt = await utils.rndHex(32);
   const { address } = req.headers;
@@ -57,7 +57,11 @@ async function transfer(req, res, next) {
   );
 
   try {
-    const { outputCommitment, outputCommitmentIndex, txObj } = await nfController.transfer(
+    const {
+      outputCommitment,
+      outputCommitmentIndex,
+      transferReceipt,
+    } = await nfController.transfer(
       tokenId,
       receiverPublicKey,
       originalCommitmentSalt,
@@ -75,7 +79,7 @@ async function transfer(req, res, next) {
     res.data = {
       z_B: outputCommitment,
       z_B_index: outputCommitmentIndex,
-      txObj,
+      txObj: transferReceipt,
       S_B: newCommitmentSalt,
     };
     next();
@@ -85,14 +89,7 @@ async function transfer(req, res, next) {
 }
 
 async function burn(req, res, next) {
-  const {
-    A: tokenId,
-    S_A: salt,
-    Sk_A: secretKey,
-    z_A: commitment,
-    z_A_index: commitmentIndex,
-    payTo: tokenReceiver,
-  } = req.body;
+  const { tokenId, salt, secretKey, commitment, commitmentIndex, tokenReceiver } = req.body;
   const { address } = req.headers;
   const vkId = await getVkId('BurnToken');
   const { contractJson: nfTokenShieldJson, contractInstance: nfTokenShield } = await getContract(
