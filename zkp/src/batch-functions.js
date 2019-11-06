@@ -1,12 +1,13 @@
 /**
 module containing functions specific to batched proofs
 */
-
+import jsonfile from 'jsonfile';
 import { FTokenShield, VerifierRegistry, Verifier } from './contract-abstractions';
 import zkp from './f-token-zkp';
 import conf from './config';
 import { computePath, computeVectors, checkRoot } from './compute-vectors';
 import { computeProof } from './common-token-functions';
+import Element from './Element';
 
 const utils = require('zkp-utils');
 
@@ -19,16 +20,6 @@ const {
 } = conf;
 
 /**
-This function expects a BigInt and will set all bits longer than 'bits'
-to zero
-*/
-function zeroMSBs(b, bits = MERKLE_HASHLENGTH * 8) {
-  const binary = b.toString(2);
-  const significant = binary.slice(-bits);
-  return BigInt('0b'.concat(significant.padStart(binary.length, '0')));
-}
-
-/**
 This function checks that an array is compatible with the batch proof
 */
 function isArrayCorrect(array) {
@@ -39,8 +30,7 @@ function isArrayCorrect(array) {
 This function is the simple batch equivalent of fungible transfer.  It takes a single
 input coin and splits it between 20 recipients (some of which could be the original owner)
 It's really the 'split' of a join-split.  It's no use for non-fungibles because, for them,
-there's no concept of joining and splitting (yet). Note also that, in this implementation
-we've moved away from representing everything as hex strings, preferring a BigInt
+there's no concept of joining and splitting (yet).
 @param {string} C - The value of the input coin C
 @param {array} E - The values of the output coins (including the change coin)
 @param {array} pkB - Bobs' public keys (must include at least one of pkA for change)
@@ -54,8 +44,16 @@ we've moved away from representing everything as hex strings, preferring a BigIn
 @returns {array} z_E_index - the indexes of the commitments within the Merkle Tree.  This is required for later transfers/joins so that Alice knows which leaf of the Merkle Tree she needs to get from the fTokenShield contract in order to calculate a path.
 @returns {object} txObj - a promise of a blockchain transaction
 */
-async function simpleFungibleBatchTransfer(_C, E, pkB, S_C, S_E, skA, zC, zCIndex, account) {
+async function simpleFungibleBatchTransfer(C, E, _pkB, _S_C, _S_E, _skA, _zC, zCIndex, account) {
   console.group('\nIN TRANSFER...');
+  // firstly, we may have been passed hex strings longer than 216 bits.  That won't work
+  // for our scheme so we need to zero out any leading zeros. (Ignore coins because they are 128 bits)
+  const pkB = _pkB.map(k => utils.zeroMSBs(k));
+  const S_C = utils.zeroMSBs(_S_C);
+  const S_E = _S_E.map(k => utils.zeroMSBs(k));
+  const skA = utils.zeroMSBs(_skA);
+  const zC = utils.zeroMSBs(_zC);
+
   // check we have arrays of the correct length
   if (!isArrayCorrect(E)) throw new Error('Array E was the wrong length');
   if (!isArrayCorrect(pkB)) throw new Error('Array pkB was the wrong length');
@@ -65,9 +63,9 @@ async function simpleFungibleBatchTransfer(_C, E, pkB, S_C, S_E, skA, zC, zCInde
   // we may get inputs passed as hex strings so let's do a conversion just in case
 
   // addition check
-  const C = BigInt(_C);
-  const T = E.reduce((acc, e) => acc + BigInt(e));
-  if (C !== T) throw new Error('outputs must sum to the input commitment value');
+  const c = BigInt(C);
+  const T = E.reduce((acc, e) => acc + BigInt(e), BigInt(0));
+  if (c !== T) throw new Error(`Input commitment value was ${C} but output total was ${T}`);
 
   console.log('Finding the relevant Shield and Verifier contracts');
   const fTokenShield = await FTokenShield.deployed();
@@ -86,33 +84,28 @@ async function simpleFungibleBatchTransfer(_C, E, pkB, S_C, S_E, skA, zC, zCInde
       else resolve(data);
     }),
   );
-  const { vkId } = vkIds.SimpleFungibleBatchTransfer;
+  const { vkId } = vkIds.SimpleBatchTransferCoin;
 
   const root = await fTokenShield.latestRoot();
   console.log(`Merkle Root: ${root}`);
 
   // Calculate new arguments for the proof:
-  const pkA = zeroMSBs(utils.hash(skA));
-  const nC = zeroMSBs(utils.concatenateThenHash(S_C, skA));
+  const pkA = utils.zeroMSBs(utils.hash(skA));
+  const nC = utils.zeroMSBs(utils.concatenateThenHash(S_C, skA));
   const zE = [];
   for (let i = 0; i < E.length; i++) {
-    zE[i] = zeroMSBs(utils.concatenateThenHash(E[i], pkB[i], S_E[i]));
+    zE[i] = utils.zeroMSBs(utils.concatenateThenHash(E[i], pkB[i], S_E[i]));
   }
   // we need the Merkle path from the token commitment to the root, expressed as Elements
-  const pathC = await computePath(
-    account,
-    fTokenShield,
-    zC.toString(16).padStart(MERKLE_HASHLENGTH * 2, '0'), // computePath expects hex currently so convert BigInt
-    zCIndex,
-  );
+  const pathC = await computePath(account, fTokenShield, zC, zCIndex);
   const pathCElements = {
     elements: pathC.path.map(element => new Element(element, 'field', MERKLE_HASHLENGTH * 8, 1)), // we truncate to 216 bits - sending the whole 256 bits will overflow the prime field
     positions: new Element(pathC.positions, 'field', 128, 1),
   };
 
   // Although we only strictly need the root to be reconciled within zokrates, it's easier to check and intercept any errors in js; so we'll first try to reconcole here:
-  checkRoot(zC.toString(16).padStart(MERKLE_HASHLENGTH * 2, '0'), pathC, root); // this function currently needs hex rather than BigInt
-
+  checkRoot(zC, pathC, root); // this function currently needs hex rather than BigInt
+/*
   console.group('Existing Proof Variables:');
   const p = ZOKRATES_PACKING_SIZE;
   console.log(`C: ${C} : ${utils.hexToFieldPreserve(C, p)}`);
@@ -130,11 +123,11 @@ async function simpleFungibleBatchTransfer(_C, E, pkB, S_C, S_E, skA, zC, zCInde
   for (const ze of zE) console.log(`zE: ${ze} : ${utils.hexToFieldPreserve(ze, p)}`);
   console.log(`root: ${root} : ${utils.hexToFieldPreserve(root, p)}`);
   console.groupEnd();
-
-  const publicInputHash = zeroMSBs(utils.concatenateThenHash(BigInt(root), nC, ...zE));
+*/
+  const publicInputHash = utils.zeroMSBs(utils.concatenateThenHash(root, nC, ...zE));
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 216, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -154,18 +147,18 @@ async function simpleFungibleBatchTransfer(_C, E, pkB, S_C, S_E, skA, zC, zCInde
   );
   let proof = await computeProof(
     [
-      new Element(publicInputHash, 'field'),
+      new Element(publicInputHash, 'field', 216, 1),
       new Element(C, 'field', 128, 1),
-      new Element(skA, 'field'),
-      new Element(S_C, 'field'),
+      new Element(skA, 'field', 216, 1),
+      new Element(S_C, 'field', 216, 1),
       ...pathCElements.elements.slice(1),
       pathCElements.positions,
-      new Element(nC, 'field'),
-      new Element(E, 'field', 128, 1),
-      new Element(pkB, 'field'),
-      new Element(S_E, 'field'),
-      new Element(zE, 'field'),
-      new Element(root, 'field'),
+      new Element(nC, 'field', 216, 1),
+      ...E.map(e => new Element(e, 'field', 128, 1)),
+      ...pkB.map(pkb => new Element(pkb, 'field', 216, 1)),
+      ...S_E.map(se => new Element(se, 'field', 216, 1)),
+      ...zE.map(ze => new Element(ze, 'field', 216, 1)),
+      new Element(root, 'field', 216, 1),
     ],
     hostDir,
   );

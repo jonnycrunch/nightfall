@@ -134,8 +134,8 @@ async function vkController() {
 
   await loadVk(config.FT_MINT_VK, 'MintCoin', account);
   await loadVk(config.FT_TRANSFER_VK, 'TransferCoin', account);
-  await loadVk(config.FT_BURN_VK, 'BurnCoin', account);
   await loadVk(config.FT_SIMPLE_BATCH_TRANSFER_VK, 'SimpleBatchTransferCoin', account);
+  await loadVk(config.FT_BURN_VK, 'BurnCoin', account);
 
   await setVkIds(account);
 
@@ -145,8 +145,8 @@ async function vkController() {
 async function runController() {
   await vkController();
 }
-
-runController();
+// TODO - do we really need this async call on import? Better to await it properly.
+// runController();
 
 export default {
   runController,

@@ -52,7 +52,7 @@ This function sets the vkId's within the Shield contract.
 @param {contract} nfTokenShield - an instance of the TokenShield contract
 */
 async function setVkIds(vkIds, account, fTokenShield) {
-  console.log('Setting vkIds within NFTokenShield');
+  console.log('Setting vkIds within FTokenShield');
   await fTokenShield.setVkIds(
     vkIds.MintCoin.vkId,
     vkIds.TransferCoin.vkId,
@@ -189,13 +189,16 @@ async function simpleFungibleBatchTransfer(
 
   console.group('Batch transferring within the Shield contract');
 
-  console.log('proof:');
-  console.log(proof);
-  console.log('inputs:');
-  console.log(inputs);
+  console.log(`proof:${proof}`);
+  console.log(`proof length: ${proof.length}`);
+  console.log(`inputs: ${inputs}`);
   console.log(`vkId: ${vkId}`);
+  console.log(`root: ${root}`);
+  console.log(`nullifier: ${nullifierC}`);
+  console.log(`commitments: ${commitmentE}`);
+  console.log(`commitment length: ${commitmentE.length}`);
 
-  const txReceipt = await fTokenShield.simpleFungibleBatchTransfer(
+  const txReceipt = await fTokenShield.simpleBatchTransfer(
     proof,
     inputs,
     vkId,
@@ -208,8 +211,9 @@ async function simpleFungibleBatchTransfer(
       gasPrice: config.GASPRICE,
     },
   );
-  // This will be an array now - need to handle that with a slice
-  const coinEIndex = txReceipt.logs[0].args.commitment_indices; // log for: event Transfer
+  // the commitment index returned will be the leafindex of the last commitment
+  // console.log('logs', txReceipt.logs);
+  const coinEIndex = txReceipt.logs[0].args.commitment_index; // log for: event Transfer
 
   const newRoot = await fTokenShield.latestRoot();
   console.log(`Merkle Root after transfer: ${newRoot}`);

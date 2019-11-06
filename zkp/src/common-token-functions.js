@@ -28,7 +28,7 @@ export async function computeProof(elements, hostDir) {
 
   console.log(`Container id: ${container.id}`);
   console.log(`To connect to the container manually: 'docker exec -ti ${container.id} bash'`);
-
+  // console.log('output vectors', computeVectors(elements));
   await zok.computeWitness(container, computeVectors(elements), hostDir);
 
   const proof = await zok.generateProof(container, undefined, hostDir);

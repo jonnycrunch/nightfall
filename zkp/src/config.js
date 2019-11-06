@@ -74,7 +74,7 @@ export default {
   FT_MINT_VK: './code/gm17/ft-mint/ft-mint-vk.json',
   FT_TRANSFER_VK: './code/gm17/ft-transfer/ft-transfer-vk.json',
   FT_BURN_VK: './code/gm17/ft-burn/ft-burn-vk.json',
-  FT_SIMPLE_BATCH_TRANSFER_VK: './code/gm17/ft-batch-transfer/ft-transfer-vk.json',
+  FT_SIMPLE_BATCH_TRANSFER_VK: './code/gm17/ft-batch-transfer/ft-batch-transfer-vk.json',
 
   AGREE_CONTRACT_VK: './code/gm17/agree-contract/agree-contract-vk.json',
 

@@ -147,8 +147,12 @@ knows S_A,pkA,n and n so could in fact calculate the token themselves.
 This is required for later transfers/joins so that Alice knows which 'chunks' of the Merkle Tree
 she needs to 'get' from the fTokenShield contract in order to calculate a path.
 */
-async function mint(A, pkA, S_A, account) {
+async function mint(A, _pkA, _S_A, account) {
   console.group('\nIN MINT...');
+
+  // zero the most significant bits, just in case variables weren't supplied like that
+  const pkA = utils.zeroMSBs(_pkA);
+  const S_A = utils.zeroMSBs(_S_A);
 
   console.log('Finding the relevant Shield and Verifier contracts');
   const fTokenShield = shield[account] ? shield[account] : await FTokenShield.deployed();
@@ -168,9 +172,10 @@ async function mint(A, pkA, S_A, account) {
     }),
   );
   const { vkId } = vkIds.MintCoin;
+  console.log('Id for MintCoin was', vkId);
 
   // Calculate new arguments for the proof:
-  const zA = utils.concatenateThenHash(A, pkA, S_A);
+  const zA = utils.zeroMSBs(utils.concatenateThenHash(A, pkA, S_A));
 
   console.group('Existing Proof Variables:');
   const p = config.ZOKRATES_PACKING_SIZE;
@@ -184,10 +189,10 @@ async function mint(A, pkA, S_A, account) {
   console.log('zA: ', zA, ' : ', utils.hexToFieldPreserve(zA, p, pt));
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(A, zA);
+  const publicInputHash = utils.zeroMSBs(utils.concatenateThenHash(A, zA));
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 216, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -202,7 +207,7 @@ async function mint(A, pkA, S_A, account) {
   console.group('Computing proof with w=[pkA,S_A] x=[A,Z,1]');
   let proof = await computeProof(
     [
-      new Element(publicInputHash, 'field', 248, 1),
+      new Element(publicInputHash, 'field', 216, 1),
       new Element(A, 'field', 128, 1),
       new Element(pkA, 'field'),
       new Element(S_A, 'field'),
@@ -268,21 +273,31 @@ async function transfer(
   D,
   E,
   F,
-  pkB,
-  S_C,
-  S_D,
-  S_E,
-  S_F,
-  skA,
-  zC,
+  _pkB,
+  _S_C,
+  _S_D,
+  _S_E,
+  _S_F,
+  _skA,
+  _zC,
   zCIndex,
-  zD,
+  _zD,
   zDIndex,
   account,
 ) {
   console.group('\nIN TRANSFER...');
 
-  if (typeof pkB === 'object') throw new Error('You need to call a batch-transfer');
+  if (typeof _pkB === 'object') throw new Error('You need to call a batch-transfer');
+
+  // zero the most significant bits, just in case variables weren't supplied like that
+  const pkB = utils.zeroMSBs(_pkB);
+  const S_C = utils.zeroMSBs(_S_C);
+  const S_D = utils.zeroMSBs(_S_D);
+  const S_E = utils.zeroMSBs(_S_E);
+  const S_F = utils.zeroMSBs(_S_F);
+  const skA = utils.zeroMSBs(_skA);
+  const zC = utils.zeroMSBs(_zC);
+  const zD = utils.zeroMSBs(_zD);
 
   // due to limitations in the size of the adder implemented in the proof dsl,
   // we need C+D and E+F to easily fit in <128 bits (16 bytes). They could of course
@@ -314,11 +329,11 @@ async function transfer(
   console.log(`Merkle Root: ${root}`);
 
   // Calculate new arguments for the proof:
-  const pkA = utils.hash(skA);
-  const nC = utils.concatenateThenHash(S_C, skA);
-  const nD = utils.concatenateThenHash(S_D, skA);
-  const zE = utils.concatenateThenHash(E, pkB, S_E);
-  const zF = utils.concatenateThenHash(F, pkA, S_F);
+  const pkA = utils.zeroMSBs(utils.hash(skA));
+  const nC = utils.zeroMSBs(utils.concatenateThenHash(S_C, skA));
+  const nD = utils.zeroMSBs(utils.concatenateThenHash(S_D, skA));
+  const zE = utils.zeroMSBs(utils.concatenateThenHash(E, pkB, S_E));
+  const zF = utils.zeroMSBs(utils.concatenateThenHash(F, pkA, S_F));
 
   // we need the Merkle path from the token commitment to the root, expressed as Elements
   const pathC = await computePath(account, fTokenShield, zC, zCIndex);
@@ -369,10 +384,10 @@ async function transfer(
   console.log(`root: ${root} : ${utils.hexToFieldPreserve(root, p)}`);
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(root, nC, nD, zE, zF);
+  const publicInputHash = utils.zeroMSBs(utils.concatenateThenHash(root, nC, nD, zE, zF));
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 216, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -392,7 +407,7 @@ async function transfer(
   );
   let proof = await computeProof(
     [
-      new Element(publicInputHash, 'field', 248, 1),
+      new Element(publicInputHash, 'field', 216, 1),
       new Element(C, 'field', 128, 1),
       new Element(skA, 'field'),
       new Element(S_C, 'field'),
@@ -459,7 +474,12 @@ account. All values are hex strings.
 @param {string} account - the that is paying for the transaction
 @param {string} payTo - the account that the paid-out ERC-20 should be sent to (defaults to 'account')
 */
-async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
+async function burn(C, _skA, _S_C, _zC, zCIndex, account, _payTo) {
+  // zero the most significant bits, just in case variables weren't supplied like that
+  const S_C = utils.zeroMSBs(_S_C);
+  const skA = utils.zeroMSBs(_skA);
+  const zC = utils.zeroMSBs(_zC);
+
   let payTo = _payTo;
   if (payTo === undefined) payTo = account; // have the option to pay out to another address
   // before we can burn, we need to deploy a verifying key to mintVerifier (reusing mint for this)
@@ -488,7 +508,7 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   console.log(`Merkle Root: ${root}`);
 
   // Calculate new arguments for the proof:
-  const Nc = utils.concatenateThenHash(S_C, skA);
+  const Nc = utils.zeroMSBs(utils.concatenateThenHash(S_C, skA));
 
   // We need the Merkle path from the commitment to the root, expressed as Elements
   const path = await computePath(account, fTokenShield, zC, zCIndex);
@@ -524,7 +544,7 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   const publicInputHash = utils.concatenateThenHash(root, Nc, C, payToLeftPadded); // notice we're using the version of payTo which has been padded to 256-bits; to match our derivation of publicInputHash within our zokrates proof.
   console.log('publicInputHash:', publicInputHash);
 
-  const inputs = computeVectors([new Element(publicInputHash, 'field', 248, 1)]);
+  const inputs = computeVectors([new Element(publicInputHash, 'field', 216, 1)]);
   console.log('inputs:');
   console.log(inputs);
 
@@ -539,7 +559,7 @@ async function burn(C, skA, S_C, zC, zCIndex, account, _payTo) {
   console.group('Computing proof with w=[skA,S_C,path[],order] x=[C,Nc,root,1]');
   let proof = await computeProof(
     [
-      new Element(publicInputHash, 'field', 248, 1),
+      new Element(publicInputHash, 'field', 216, 1),
       new Element(payTo, 'field'),
       new Element(C, 'field', 128, 1),
       new Element(skA, 'field'),
