@@ -79,7 +79,7 @@ while true; do
         [Nn]* ) echo -e '\033[32mList of all trusted setups :\033[m'
                 echo -e '1.ft-mint\n2.nft-mint\n3.ft-transfer\n4.nft-transfer\n5.ft-burn\n6.nft-burn'
                 echo -e 'Type the number of each trusted setup seperated by a comma'
-                read -p '(use "1,2" to create trusted setup for ft-mint & nft-mint) : ' proofs
+                read -p '(E.g. type "1,2" to run the trusted setups for ft-mint & nft-mint) : ' proofs
                     proofCreation $proofs
                 exit;;
         * ) echo "Please answer yes or no.";;
