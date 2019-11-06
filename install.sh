@@ -72,7 +72,7 @@ while true; do
     then
         yn=$1
     else
-        read -p "Do you want to recreate all trusted setups? (y/n) : " yn    
+        read -p "Do you want to rerun all trusted setups? (y/n) : " yn    
     fi
     case $yn in
         [Yy]* ) npm run setup-all && cd ../; break;;
