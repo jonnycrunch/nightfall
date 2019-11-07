@@ -1,7 +1,7 @@
 /* eslint-disable import/no-unresolved */
 
 import utils from 'zkp-utils';
-import AccountUtils from '../src/account-utils/account-utils';
+import { getEthAccounts, getAccountBalance } from '../src/account-utils/account-utils';
 
 import controller from '../src/batch-functions';
 import fcontroller from '../src/f-token-controller';
@@ -49,7 +49,7 @@ describe('f-token-controller.js tests', () => {
 
   test('Should create 10000 tokens in accounts[0]', async () => {
     // fund some accounts with FToken
-    const accounts = await AccountUtils.getEthAccounts();
+    const accounts = await getEthAccounts();
     const AMOUNT = 10000;
     const bal1 = await ftoken.balanceOf.call(accounts[0]);
     await ftoken.mint(accounts[0], AMOUNT, {
@@ -61,7 +61,7 @@ describe('f-token-controller.js tests', () => {
   });
 
   test('Should mint an ERC-20 commitment Z_A_C for Alice of value C', async () => {
-    const accounts = await AccountUtils.getEthAccounts();
+    const accounts = await getEthAccounts();
     const [zTest, zIndex] = await fcontroller.mint(C, pkA, S_A_C, accounts[0]);
     zInd1 = parseInt(zIndex, 10);
     expect(Z_A_C).toEqual(zTest);
@@ -69,7 +69,8 @@ describe('f-token-controller.js tests', () => {
 
   test('Should transfer ERC-20 commitments of various values to 19 receipients and get change', async () => {
     // the E's becomes Bobs'.
-    const accounts = await AccountUtils.getEthAccounts();
+    const accounts = await getEthAccounts();
+    const bal1 = await getAccountBalance(accounts[0]);
     const response = await controller.simpleFungibleBatchTransfer(
       C,
       E,
@@ -81,14 +82,17 @@ describe('f-token-controller.js tests', () => {
       zInd1,
       accounts[0],
     );
-    console.log('mint index', zInd1);
     zInd2 = parseInt(response.z_E_index, 10);
     commitments = response.z_E;
-    console.log('result was', zInd2);
+    const bal2 = await getAccountBalance(accounts[0]);
+    const wei = parseInt(bal1, 10) - parseInt(bal2, 10);
+    console.log('gas consumed was', wei / 20e9);
+    console.log('approx total cost in USD @$200/ETH was', wei * 200e-18);
+    console.log('approx per transaction cost in USD @$200/ETH was', (wei * 200e-18) / 20);
   });
 
   test('Should transfer a pair of the 20 ERC-20 commitments that have just been created', async () => {
-    const accounts = await AccountUtils.getEthAccounts();
+    const accounts = await getEthAccounts();
     const c = '0x00000000000000000000000000000002';
     const d = '0x00000000000000000000000000000002';
     const e = '0x00000000000000000000000000000001';

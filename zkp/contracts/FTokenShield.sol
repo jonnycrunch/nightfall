@@ -215,7 +215,7 @@ depth row  width  st#     end#
 
       // Check that the publicInputHash equals the hash of the 'public inputs':
       bytes32 publicInputHash = bytes32(_inputs[0]);
-      bytes32 publicInputHashCheck = zeroMSBs(bytes32(sha256(abi.encodePacked(_root, _nullifier, _commitments))));
+      bytes32 publicInputHashCheck = zeroMSBs(sha256(abi.encodePacked(_root, _nullifier, _commitments)));
       require(publicInputHashCheck == publicInputHash, "publicInputHash cannot be reconciled");
 
       // verify the proof
@@ -228,14 +228,13 @@ depth row  width  st#     end#
 
       // update contract states
       nullifiers[_nullifier] = _nullifier; //remember we spent it
-      uint256 leafIndexStart = merkleWidth - 1 + leafCount;
+      uint256 leafIndex = merkleWidth - 1 + leafCount;
       for (uint i = 0; i < batchProofSize; i++){
         commitments[_commitments[i]] = _commitments[i]; //add the commitment to the list of commitments
-        uint256 leafIndex = merkleWidth - 1 + leafCount++; //specify the index of the commitment within the merkleTree
-        merkleTree[leafIndex] = bytes27(_commitments[i]<<40); //add the commitment to the merkleTree
-        // latestRoot = updatePathToRoot(leafIndex);
+        merkleTree[leafIndex++] = bytes27(_commitments[i]<<40); //add the commitment to the merkleTree
       }
-      latestRoot = updateMerkleTree(leafIndexStart);
+      leafCount += batchProofSize;
+      latestRoot = updateMerkleTree(leafIndex-batchProofSize);
       roots[latestRoot] = latestRoot; //and save the new root to the list of roots
       emit SimpleBatchTransfer(_nullifier, _commitments, leafCount-1);
   }
@@ -309,11 +308,13 @@ depth row  width  st#     end#
   // @params index - the index of the leaf where we start to add our commitments
   function updateMerkleTree(uint256 index) private returns (bytes32) {
     uint256 depth = merkleDepth;
-    uint256 rowMax = 2**depth-2;
+    uint256 rowMax = 8589934590; //2**depth-2
     uint256 currentNode = index; // initialise
     uint256 startNode = currentNode;
     uint256 parentNode = 0;
     uint256 sisterNode = 0;
+    bytes27 nodeA;
+    bytes27 nodeB;
     bytes32 h;
     bytes27 def; // assign a default value (equals "" in this case)
     do {
@@ -321,18 +322,21 @@ depth row  width  st#     end#
       if (currentNode%2 == 0){ // calculation is different if node is even or odd
         sisterNode = currentNode - 1;
         parentNode = (currentNode - 1)/2;
-        h = sha256(abi.encodePacked(merkleTree[sisterNode],merkleTree[currentNode]));
+        nodeA = merkleTree[sisterNode];
+        nodeB = merkleTree[currentNode];
       } else {
         sisterNode = currentNode + 1;
         parentNode = currentNode/2;
-        h = sha256(abi.encodePacked(merkleTree[currentNode],merkleTree[sisterNode]));
+        nodeB = merkleTree[sisterNode];
+        nodeA = merkleTree[currentNode];
       }
       if (currentNode == startNode) startNode = parentNode; // remember where to start on the next row
       //check if we've gone past the end of the added commitments or run off the end of the row
       if (merkleTree[sisterNode] == def && merkleTree[currentNode] == def || currentNode > rowMax) {
         currentNode = startNode; // if we have, go to the next row
-        rowMax = 2**--depth - 2;
+        rowMax = 2**--depth - 2; // oddly this seems to use less gas than the equivalent rowMax = (rowMax-2)>>1
       } else { // if not, add the hash to the Merkle tree and go to the next node
+        h = sha256(abi.encodePacked(nodeA, nodeB));
         merkleTree[parentNode] = bytes27(h<<40);
         currentNode += 2;
       }

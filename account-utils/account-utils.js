@@ -1,6 +1,6 @@
 const Web3 = require('web3');
 
-const getEthAccounts = async () => {
+export const getEthAccounts = async () => {
   const web3 = new Web3(
     new Web3.providers.HttpProvider(
       `${process.env.BLOCKCHAIN_HOST}:${process.env.BLOCKCHAIN_PORT}`,
@@ -10,6 +10,12 @@ const getEthAccounts = async () => {
   return accounts;
 };
 
-module.exports = {
-  getEthAccounts,
+export const getAccountBalance = async (addr) => {
+  const web3 = new Web3(
+    new Web3.providers.HttpProvider(
+      `${process.env.BLOCKCHAIN_HOST}:${process.env.BLOCKCHAIN_PORT}`,
+    ),
+  );
+  const balance = await web3.eth.getBalance(addr);
+  return balance;
 };
