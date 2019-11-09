@@ -32,7 +32,7 @@ cd zkp-utils && npm ci && \
 
 cd ../zkp && npm ci && \
 
-cd zkp/code/gm17/
+cd code/gm17/
 
 setups=()
 
@@ -43,7 +43,7 @@ for d in *; do
 done
 
 # Lists of all existing proofs
-echo -e '\033[32mList of completed trusted setups :\033[m'
+echo -e $'\n''\033[32mList of completed trusted setups :\033[m'
 existingSetups=()
 
 for i in "${setups[@]}"
@@ -61,11 +61,11 @@ while true; do
     then
         yn=$1
     else
-        read -p $'\n'"Do you want to rerun all trusted setups? (y/n) : " yn    
+        read -p $'\n''Do you want to rerun all trusted setups? (y/n) : ' yn    
     fi
     case $yn in
         [Yy]* ) npm run setup-all && cd ../; break;;
-        [Nn]* ) echo -e '\033[32mList of all trusted setups :\033[m'
+        [Nn]* ) echo -e $'\n''\033[32mList of all trusted setups :\033[m'
                 #echo -e '1.ft-mint\n2.nft-mint\n3.ft-transfer\n4.nft-transfer\n5.ft-burn\n6.nft-burn'
                 for (( i=0; i<${#setups[@]}; i++ )); 
                 do 
