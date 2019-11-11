@@ -128,11 +128,17 @@ async function setVkIds(account) {
   );
 
   console.log('Setting vkIds within fTokenShield');
-  await fTokenShield.setVkIds(vkIds.MintCoin.vkId, vkIds.TransferCoin.vkId, vkIds.BurnCoin.vkId, {
-    from: account,
-    gas: 6500000,
-    gasPrice: config.GASPRICE,
-  });
+  await fTokenShield.setVkIds(
+    vkIds.MintCoin.vkId,
+    vkIds.TransferCoin.vkId,
+    vkIds.SimpleBatchTransferCoin.vkId,
+    vkIds.BurnCoin.vkId,
+    {
+      from: account,
+      gas: 6500000,
+      gasPrice: config.GASPRICE,
+    },
+  );
 }
 
 /**
