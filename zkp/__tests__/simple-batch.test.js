@@ -91,7 +91,7 @@ describe('f-token-controller.js tests', () => {
     console.log('approx per transaction cost in USD @$200/ETH was', (wei * 200e-18) / 20);
   });
 
-  test('Should transfer a pair of the 20 ERC-20 commitments that have just been created', async () => {
+  test.skip('Should transfer a pair of the 20 ERC-20 commitments that have just been created', async () => {
     const accounts = await getEthAccounts();
     const c = '0x00000000000000000000000000000002';
     const d = '0x00000000000000000000000000000002';

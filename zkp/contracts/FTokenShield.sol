@@ -319,6 +319,7 @@ depth row  width  st#     end#
     bytes27 def; // assign a default value (equals "" in this case)
     do {
       // find the sister node calculate the parent node and its hash
+      //sisterNode = currentNode ^ 1; parentNode = currentNode >> 1;
       if (currentNode%2 == 0){ // calculation is different if node is even or odd
         sisterNode = currentNode - 1;
         parentNode = (currentNode - 1)/2;

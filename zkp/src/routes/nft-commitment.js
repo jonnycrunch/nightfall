@@ -3,21 +3,36 @@
 import { Router } from 'express';
 import utils from 'zkp-utils';
 import nfController from '../nf-token-controller';
+import { getVkId, getContract } from '../contractUtils';
 
 const router = Router();
 
 async function mint(req, res, next) {
   const { address } = req.headers;
-  const { A, pk_A } = req.body;
-  const S_A = await utils.rndHex(32);
+  const { tokenId, ownerPublicKey } = req.body;
+  const salt = await utils.rndHex(32);
+  const vkId = await getVkId('MintToken');
+  const { contractJson: nfTokenShieldJson, contractInstance: nfTokenShield } = await getContract(
+    'NFTokenShield',
+  );
 
   try {
-    const [z_A, z_A_index] = await nfController.mint(A, pk_A, S_A, address);
+    const { commitment, commitmentIndex } = await nfController.mint(
+      tokenId,
+      ownerPublicKey,
+      salt,
+      vkId,
+      {
+        nfTokenShieldJson,
+        nfTokenShieldAddress: nfTokenShield.address,
+        account: address,
+      },
+    );
 
     res.data = {
-      z_A,
-      z_A_index,
-      S_A,
+      z_A: commitment,
+      z_A_index: commitmentIndex,
+      S_A: salt,
     };
     next();
   } catch (err) {
@@ -26,25 +41,46 @@ async function mint(req, res, next) {
 }
 
 async function transfer(req, res, next) {
-  const { A, pk_B, S_A, sk_A, z_A, z_A_index } = req.body;
-  const S_B = await utils.rndHex(32);
+  const {
+    tokenId,
+    receiverPublicKey,
+    originalCommitmentSalt,
+    senderSecretKey,
+    commitment,
+    commitmentIndex,
+  } = req.body;
+  const newCommitmentSalt = await utils.rndHex(32);
   const { address } = req.headers;
+  const vkId = await getVkId('TransferToken');
+  const { contractJson: nfTokenShieldJson, contractInstance: nfTokenShield } = await getContract(
+    'NFTokenShield',
+  );
+
   try {
-    const { z_B, z_B_index, txObj } = await nfController.transfer(
-      A,
-      pk_B,
-      S_A,
-      S_B,
-      sk_A,
-      z_A,
-      z_A_index,
-      address,
+    const {
+      outputCommitment,
+      outputCommitmentIndex,
+      transferReceipt,
+    } = await nfController.transfer(
+      tokenId,
+      receiverPublicKey,
+      originalCommitmentSalt,
+      newCommitmentSalt,
+      senderSecretKey,
+      commitment,
+      commitmentIndex,
+      vkId,
+      {
+        nfTokenShieldJson,
+        nfTokenShieldAddress: nfTokenShield.address,
+        account: address,
+      },
     );
     res.data = {
-      z_B,
-      z_B_index,
-      txObj,
-      S_B,
+      z_B: outputCommitment,
+      z_B_index: outputCommitmentIndex,
+      txObj: transferReceipt,
+      S_B: newCommitmentSalt,
     };
     next();
   } catch (err) {
@@ -53,20 +89,22 @@ async function transfer(req, res, next) {
 }
 
 async function burn(req, res, next) {
-  const { A, S_A, Sk_A, z_A, z_A_index, payTo } = req.body;
+  const { tokenId, salt, secretKey, commitment, commitmentIndex, tokenReceiver } = req.body;
   const { address } = req.headers;
+  const vkId = await getVkId('BurnToken');
+  const { contractJson: nfTokenShieldJson, contractInstance: nfTokenShield } = await getContract(
+    'NFTokenShield',
+  );
+
   try {
-    await nfController.burn(
-      A,
-      Sk_A,
-      S_A,
-      z_A,
-      z_A_index,
-      address,
-      payTo, // payed to same user.
-    );
+    await nfController.burn(tokenId, secretKey, salt, commitment, commitmentIndex, vkId, {
+      nfTokenShieldJson,
+      nfTokenShieldAddress: nfTokenShield.address,
+      account: address,
+      tokenReceiver,
+    });
     res.data = {
-      z_A,
+      z_A: commitment,
     };
     next();
   } catch (err) {
@@ -75,13 +113,26 @@ async function burn(req, res, next) {
 }
 
 async function checkCorrectness(req, res, next) {
-  console.log('\nzkp/src/restapi', '\n/token/checkCorrectness', '\nreq.body', req.body);
+  console.log('\nzkp/src/restapi', '\n/checkCorrectnessForNFTCommitment', '\nreq.body', req.body);
 
   try {
     const { address } = req.headers;
-    const { A, pk, S_A, z_A, z_A_index } = req.body;
+    const {
+      A: tokenId,
+      pk: ownerPublicKey,
+      S_A: salt,
+      z_A: commitment,
+      z_A_index: commitmentIndex,
+    } = req.body;
 
-    const results = await nfController.checkCorrectness(A, pk, S_A, z_A, z_A_index, address);
+    const results = await nfController.checkCorrectness(
+      tokenId,
+      ownerPublicKey,
+      salt,
+      commitment,
+      commitmentIndex,
+      address,
+    );
     res.data = results;
     next();
   } catch (err) {
@@ -135,14 +186,12 @@ async function unsetTokenShieldAddress(req, res, next) {
   }
 }
 
-router.route('/mint').post(mint);
-router.route('/transfer').post(transfer);
-router.route('/burn').post(burn);
-router.route('/checkCorrectness').post(checkCorrectness);
-router
-  .route('/shield')
-  .post(setTokenShieldAddress)
-  .get(getTokenShieldAddress)
-  .delete(unsetTokenShieldAddress);
+router.post('/mintNFTCommitment', mint);
+router.post('/transferNFTCommitment', transfer);
+router.post('/burnNFTCommitment', burn);
+router.post('/checkCorrectnessForNFTCommitment', checkCorrectness);
+router.post('/setNFTCommitmentShieldContractAddress', setTokenShieldAddress);
+router.get('/getNFTCommitmentShieldContractAddress', getTokenShieldAddress);
+router.delete('/removeNFTCommitmentshield', unsetTokenShieldAddress);
 
 export default router;

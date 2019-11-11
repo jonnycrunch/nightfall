@@ -76,9 +76,16 @@ Clone the Nightfall repository and use a terminal to enter the directory.
 For Linux users:
 
 - Change permission for the directory
-    `sudo chmod 777 -R zkp/code/`
-- Add the Linux user to docker group to run Docker commands without sudo. Then log out and enter again.  
-    `sudo usermod -a -G docker <username>`
+
+  ```sh
+  sudo chmod 777 -R zkp/code/
+  ```
+- Add the Linux user to docker group to run Docker commands without sudo ([read more](https://docs.docker.com/install/linux/linux-postinstall/)). Then log out and enter again.
+
+  ```sh
+  sudo groupadd docker
+  sudo usermod --append --groups docker $USER
+  ```    
 
 Next pull a compatible Docker image of ZoKrates
 
@@ -92,7 +99,7 @@ for security. This step can take a while, depending on your hardware. Before you
 more that you have provisioned enough memory for Docker, as described above:
 
 ```sh
-npm run setupAll
+./nightfall-generate-trusted-setup
 ```
 
 Note that this is a completely automated run: although questions will be asked by the script they
@@ -118,7 +125,7 @@ If any of the `.pcode` or `.code` files have been modified by new changes then, 
 else, you will need to re-run
 
 ```sh
-npm run setupAll
+./nightfall-generate-trusted-setup
 ```
 
 :night_with_stars: We're ready to go! Be sure to be in the main directory and run the demo:
