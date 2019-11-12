@@ -59,8 +59,8 @@ function unSetShield(address) {
 return the address of the shield contract
 */
 async function getShieldAddress(account) {
-  const fTokenShield = shield[account] ? shield[account] : await FTokenShield.deployed();
-  return fTokenShield.address;
+  const fTokenShieldInstance = shield[account] ? shield[account] : await FTokenShield.deployed();
+  return fTokenShieldInstance.address;
 }
 
 /**
@@ -68,8 +68,8 @@ return the balance of an account
 @param {string} address - the address of the Ethereum account
 */
 async function getBalance(address) {
-  const fTokenShield = shield[address] ? shield[address] : await FTokenShield.deployed();
-  const fToken = await FToken.at(await fTokenShield.getFToken.call());
+  const fTokenShieldInstance = shield[address] ? shield[address] : await FTokenShield.deployed();
+  const fToken = await FToken.at(await fTokenShieldInstance.getFToken.call());
   return fToken.balanceOf.call(address);
 }
 
@@ -77,8 +77,8 @@ async function getBalance(address) {
 return the address of the ERC-20 token
 */
 async function getFTAddress(address) {
-  const fTokenShield = shield[address] ? shield[address] : await FTokenShield.deployed();
-  return fTokenShield.getFToken.call();
+  const fTokenShieldInstance = shield[address] ? shield[address] : await FTokenShield.deployed();
+  return fTokenShieldInstance.getFToken.call();
 }
 
 /**
@@ -91,8 +91,8 @@ useful to be able to create coins for demonstration purposes.
 */
 async function buyFToken(amount, address) {
   console.log('Buying ERC-20', amount, address);
-  const fTokenShield = shield[address] ? shield[address] : await FTokenShield.deployed();
-  const fToken = await FToken.at(await fTokenShield.getFToken.call());
+  const fTokenShieldInstance = shield[address] ? shield[address] : await FTokenShield.deployed();
+  const fToken = await FToken.at(await fTokenShieldInstance.getFToken.call());
   return fToken.mint(address, amount, {
     from: address,
     gas: 4000000,
@@ -108,8 +108,10 @@ to toAddress.  The tranaction fee will be taken from fromAddress
 */
 async function transferFToken(amount, fromAddress, toAddress) {
   console.log('Transferring ERC-20', amount, toAddress);
-  const fTokenShield = shield[fromAddress] ? shield[fromAddress] : await FTokenShield.deployed();
-  const fToken = await FToken.at(await fTokenShield.getFToken.call());
+  const fTokenShieldInstance = shield[fromAddress]
+    ? shield[fromAddress]
+    : await FTokenShield.deployed();
+  const fToken = await FToken.at(await fTokenShieldInstance.getFToken.call());
   return fToken.transfer(toAddress, amount, {
     from: fromAddress,
     gas: 4000000,
@@ -128,8 +130,8 @@ Burning a commitment recovers the original ERC-20 value.
 */
 async function burnFToken(amount, address) {
   console.log('Buying ERC-20', amount, address);
-  const fTokenShield = shield[address] ? shield[address] : await FTokenShield.deployed();
-  const fToken = await FToken.at(await fTokenShield.getFToken.call());
+  const fTokenShieldInstance = shield[address] ? shield[address] : await FTokenShield.deployed();
+  const fToken = await FToken.at(await fTokenShieldInstance.getFToken.call());
   return fToken.burn(address, amount, {
     from: address,
     gas: 4000000,
@@ -144,8 +146,8 @@ is utilising.
 */
 async function getTokenInfo(address) {
   console.log('Getting ERC-20 info');
-  const fTokenShield = shield[address] ? shield[address] : await FTokenShield.deployed();
-  const fToken = await FToken.at(await fTokenShield.getFToken.call());
+  const fTokenShieldInstance = shield[address] ? shield[address] : await FTokenShield.deployed();
+  const fToken = await FToken.at(await fTokenShieldInstance.getFToken.call());
   const symbol = await fToken.symbol.call();
   const name = await fToken.name.call();
   return { symbol, name };
@@ -158,7 +160,7 @@ async function getTokenInfo(address) {
  * @param {String} salt - Alice's token serial number as a hex string
  * @param {String} vkId
  * @param {Object} blockchainOptions
- * @param {String} blockchainOptions.fTokenShieldJson - ABI of fTokenShield
+ * @param {String} blockchainOptions.fTokenShieldJson - ABI of fTokenShieldInstance
  * @param {String} blockchainOptions.fTokenShieldAddress - Address of deployed fTokenShieldContract
  * @param {String} blockchainOptions.account - Account that is sending these transactions
  * @returns {String} commitment - Commitment of the minted coins
@@ -230,7 +232,7 @@ async function mint(amount, _ownerPublicKey, _salt, vkId, blockchainOptions) {
   proof = proof.map(el => utils.hexToDec(el));
   console.groupEnd();
 
-  // Approve fTokenShield to take tokens from minter's account.
+  // Approve fTokenShieldInstance to take tokens from minter's account.
   // TODO: Make this more generic, getContract will not be part of nightfall-sdk.
   const { contractInstance: fToken } = await getContract('FToken');
   await fToken.approve(fTokenShieldInstance.address, parseInt(amount, 16), {
@@ -279,7 +281,7 @@ async function mint(amount, _ownerPublicKey, _salt, vkId, blockchainOptions) {
  * @param {String} receiverPublicKey - Public key of the first outputCommitment
  * @param {String} senderSecretKey
  * @param {Object} blockchainOptions
- * @param {String} blockchainOptions.fTokenShieldJson - ABI of fTokenShield
+ * @param {String} blockchainOptions.fTokenShieldJson - ABI of fTokenShieldInstance
  * @param {String} blockchainOptions.fTokenShieldAddress - Address of deployed fTokenShieldContract
  * @param {String} blockchainOptions.account - Account that is sending these transactions
  * @returns {Object[]} outputCommitments - Updated outputCommitments with their commitments and indexes.
@@ -546,21 +548,37 @@ there's no concept of joining and splitting (yet).
 @param {integer} zCIndex - the position of zC in the on-chain Merkle Tree
 @param {string} account - the account that is paying for this
 @returns {array} zE - The output token commitments
-@returns {array} z_E_index - the indexes of the commitments within the Merkle Tree.  This is required for later transfers/joins so that Alice knows which leaf of the Merkle Tree she needs to get from the fTokenShield contract in order to calculate a path.
+@returns {array} z_E_index - the indexes of the commitments within the Merkle Tree.  This is required for later transfers/joins so that Alice knows which leaf of the Merkle Tree she needs to get from the fTokenShieldInstance contract in order to calculate a path.
 @returns {object} txObj - a promise of a blockchain transaction
 */
-async function simpleFungibleBatchTransfer(C, E, _pkB, _S_C, _S_E, _skA, _zC, zCIndex, account) {
+async function simpleFungibleBatchTransfer(
+  inputCommitment,
+  outputCommitments,
+  receiversPublicKeys,
+  senderSecretKey,
+  vkId,
+  blockchainOptions,
+) {
+  const { fTokenShieldJson, fTokenShieldAddress } = blockchainOptions;
+  const account = utils.ensure0x(blockchainOptions.account);
+
+  const fTokenShield = contract(fTokenShieldJson);
+  fTokenShield.setProvider(Web3.connect());
+  const fTokenShieldInstance = await fTokenShield.at(fTokenShieldAddress);
+
   console.group('\nIN TRANSFER...');
   // firstly, we may have been passed hex strings longer than 216 bits.  That won't work
   // for our scheme so we need to zero out any leading zeros. (Ignore coins because they are 128 bits)
-  const pkB = _pkB.map(k => utils.zeroMSBs(k));
-  const S_C = utils.zeroMSBs(_S_C);
-  const S_E = _S_E.map(k => utils.zeroMSBs(k));
-  const skA = utils.zeroMSBs(_skA);
-  const zC = utils.zeroMSBs(_zC);
+  const pkB = receiversPublicKeys.map(k => utils.zeroMSBs(k));
+  const S_C = utils.zeroMSBs(inputCommitment.salt);
+  const S_E = outputCommitments.map(k => utils.zeroMSBs(k.salt));
+  const E = outputCommitments.map(k => k.value);
+  const skA = utils.zeroMSBs(senderSecretKey);
+  const zC = utils.zeroMSBs(inputCommitment.commitment);
 
   // check we have arrays of the correct length
-  if (E.length !== config.BATCH_PROOF_SIZE) throw new Error('Array E was the wrong length');
+  if (outputCommitments.length !== config.BATCH_PROOF_SIZE)
+    throw new Error('Array E was the wrong length');
   if (pkB.length !== config.BATCH_PROOF_SIZE) throw new Error('Array pkB was the wrong length');
   if (S_E.length !== config.BATCH_PROOF_SIZE) throw new Error('Array S_E was the wrong length');
 
@@ -568,30 +586,21 @@ async function simpleFungibleBatchTransfer(C, E, _pkB, _S_C, _S_E, _skA, _zC, zC
   // we may get inputs passed as hex strings so let's do a conversion just in case
 
   // addition check
-  const c = BigInt(C);
+  const c = BigInt(inputCommitment.value);
   const T = E.reduce((acc, e) => acc + BigInt(e), BigInt(0));
-  if (c !== T) throw new Error(`Input commitment value was ${C} but output total was ${T}`);
+  if (c !== T)
+    throw new Error(
+      `Input commitment value was ${inputCommitment.value} but output total was ${T}`,
+    );
 
   console.log('Finding the relevant Shield and Verifier contracts');
-  const fTokenShield = await FTokenShield.deployed();
   const verifier = await Verifier.deployed();
   const verifierRegistry = await VerifierRegistry.deployed();
-  console.log('FTokenShield contract address:', fTokenShield.address);
+  console.log('FTokenShield contract address:', fTokenShieldInstance.address);
   console.log('Verifier contract address:', verifier.address);
   console.log('VerifierRegistry contract address:', verifierRegistry.address);
 
-  // get the simple fungible batch Transfer vkId
-  console.log('Reading vkIds from json file...');
-  const vkIds = await new Promise((resolve, reject) =>
-    jsonfile.readFile(config.VK_IDS, (err, data) => {
-      // doesn't natively support promises
-      if (err) reject(err);
-      else resolve(data);
-    }),
-  );
-  const { vkId } = vkIds.SimpleBatchTransferCoin;
-
-  const root = await fTokenShield.latestRoot();
+  const root = await fTokenShieldInstance.latestRoot();
   console.log(`Merkle Root: ${root}`);
 
   // Calculate new arguments for the proof:
@@ -601,7 +610,7 @@ async function simpleFungibleBatchTransfer(C, E, _pkB, _S_C, _S_E, _skA, _zC, zC
     zE[i] = utils.zeroMSBs(utils.concatenateThenHash(E[i], pkB[i], S_E[i]));
   }
   // we need the Merkle path from the token commitment to the root, expressed as Elements
-  const pathC = await computePath(account, fTokenShield, zC, zCIndex);
+  const pathC = await computePath(account, fTokenShieldInstance, zC, inputCommitment.index);
   const pathCElements = {
     elements: pathC.path.map(
       element => new Element(element, 'field', config.MERKLE_HASHLENGTH * 8, 1),
@@ -635,7 +644,7 @@ async function simpleFungibleBatchTransfer(C, E, _pkB, _S_C, _S_E, _skA, _zC, zC
   let proof = await computeProof(
     [
       new Element(publicInputHash, 'field', 216, 1),
-      new Element(C, 'field', 128, 1),
+      new Element(inputCommitment.value, 'field', 128, 1),
       new Element(skA, 'field', 216, 1),
       new Element(S_C, 'field', 216, 1),
       ...pathCElements.elements.slice(1),
@@ -658,23 +667,32 @@ async function simpleFungibleBatchTransfer(C, E, _pkB, _S_C, _S_E, _skA, _zC, zC
   console.groupEnd();
 
   // send the token to Bob by transforming the commitment
-  const [zEIndex, txObj] = await zkp.simpleFungibleBatchTransfer(
+  const transferReceipt = await fTokenShieldInstance.simpleBatchTransfer(
     proof,
     inputs,
     vkId,
     root,
     nC,
     zE,
-    account,
-    fTokenShield,
+    {
+      from: account,
+      gas: 6500000,
+      gasPrice: config.GASPRICE,
+    },
   );
+
+  const newRoot = await fTokenShieldInstance.latestRoot();
+  console.log(`Merkle Root after transfer: ${newRoot}`);
+  console.groupEnd();
+
+  const zEIndex = transferReceipt.logs[0].args.commitment_index;
 
   console.log('TRANSFER COMPLETE\n');
   console.groupEnd();
   return {
     z_E: zE,
     z_E_index: zEIndex,
-    txObj,
+    transferReceipt,
   };
 }
 
@@ -687,7 +705,7 @@ async function simpleFungibleBatchTransfer(C, E, _pkB, _S_C, _S_E, _skA, _zC, zC
  * @param {string} commitment - the value of the commitment being burned
  * @param {string} commitmentIndex - the index of the commitment in the Merkle Tree
  * @param {Object} blockchainOptions
- * @param {String} blockchainOptions.fTokenShieldJson - ABI of fTokenShield
+ * @param {String} blockchainOptions.fTokenShieldJson - ABI of fTokenShieldInstance
  * @param {String} blockchainOptions.fTokenShieldAddress - Address of deployed fTokenShieldContract
  * @param {String} blockchainOptions.account - Account that is sending these transactions
  * @param {String} blockchainOptions.tokenReceiver - Account that will receive the tokens
@@ -823,9 +841,9 @@ async function burn(
 }
 
 async function checkCorrectness(C, pk, S, z, zIndex, account) {
-  const fTokenShield = shield[account] ? shield[account] : await FTokenShield.deployed();
+  const fTokenShieldInstance = shield[account] ? shield[account] : await FTokenShield.deployed();
 
-  const results = await zkp.checkCorrectness(C, pk, S, z, zIndex, fTokenShield);
+  const results = await zkp.checkCorrectness(C, pk, S, z, zIndex, fTokenShieldInstance);
   console.log('\nf-token-controller', '\ncheckCorrectness', '\nresults', results);
 
   return results;

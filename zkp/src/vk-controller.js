@@ -44,13 +44,9 @@ async function loadVk(vkJsonFile, vkDescription, account) {
   // check relevant contracts are deployed:
   const verifier = await Verifier.deployed();
   const verifierRegistry = await VerifierRegistry.deployed();
+  // TODO we seem to somewhat unnecessarily read this file n time where n is the number of verifier keys
+  let vk = jsonfile.readFileSync(vkJsonFile);
 
-  let vk = await new Promise((resolve, reject) => {
-    jsonfile.readFile(vkJsonFile, (err, data) => {
-      if (err) reject(err);
-      else resolve(data);
-    });
-  });
   vk = Object.values(vk);
   // convert to flattened array:
   vk = utils.flattenDeep(vk);

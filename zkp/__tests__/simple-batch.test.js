@@ -74,20 +74,28 @@ describe('f-token-controller.js tests', () => {
     expect(Z_A_C).toEqual(zTest);
   });
 
-  test.skip('Should transfer ERC-20 commitments of various values to 19 receipients and get change', async () => {
+  test('Should transfer ERC-20 commitments of various values to 19 receipients and get change', async () => {
     // the E's becomes Bobs'.
     const bal1 = await controller.getBalance(accounts[0]);
+    const inputCommitment = { value: C, salt: S_A_C, commitment: Z_A_C, index: zInd1 };
+    const outputCommitments = [];
+    for (let i = 0; i < E.length; i++) {
+      outputCommitments[i] = { value: E[i], salt: S_B_E[i] };
+    }
+
     const response = await controller.simpleFungibleBatchTransfer(
-      C,
-      E,
+      inputCommitment,
+      outputCommitments,
       pkB,
-      S_A_C,
-      S_B_E,
       skA,
-      Z_A_C,
-      zInd1,
-      accounts[0],
+      await getVkId('SimpleBatchTransferCoin'),
+      {
+        account: accounts[1],
+        fTokenShieldJson,
+        fTokenShieldAddress,
+      },
     );
+
     zInd2 = parseInt(response.z_E_index, 10);
     commitments = response.z_E;
     const bal2 = await controller.getBalance(accounts[0]);
@@ -97,28 +105,32 @@ describe('f-token-controller.js tests', () => {
     console.log('approx per transaction cost in USD @$200/ETH was', (wei * 200e-18) / 20);
   });
 
-  test.skip('Should transfer a pair of the 20 ERC-20 commitments that have just been created', async () => {
+  test('Should transfer a pair of the 20 ERC-20 commitments that have just been created', async () => {
     const c = '0x00000000000000000000000000000002';
     const d = '0x00000000000000000000000000000002';
     const e = '0x00000000000000000000000000000001';
     const f = '0x00000000000000000000000000000003';
     const pkE = await utils.rndHex(32); // public key of Eve, who we transfer to
+    const inputCommitments = [
+      { value: c, salt: S_B_E[18], commitment: commitments[18], index: zInd2 - 1 },
+      { value: d, salt: S_B_E[19], commitment: commitments[19], index: zInd2 },
+    ];
+    const outputCommitments = [
+      { value: e, salt: await utils.rndHex(32) },
+      { value: f, salt: await utils.rndHex(32) },
+    ];
+
     await controller.transfer(
-      c,
-      d,
-      e,
-      f,
+      inputCommitments,
+      outputCommitments,
       pkE,
-      S_B_E[18],
-      S_B_E[19],
-      await utils.rndHex(32),
-      await utils.rndHex(32),
       skB,
-      commitments[18],
-      zInd2 - 1,
-      commitments[19],
-      zInd2,
-      accounts[0],
+      await getVkId('TransferCoin'),
+      {
+        account: accounts[1],
+        fTokenShieldJson,
+        fTokenShieldAddress,
+      },
     );
   });
 });
