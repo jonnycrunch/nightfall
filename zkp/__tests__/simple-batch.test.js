@@ -33,12 +33,12 @@ beforeAll(async () => {
   fTokenShieldJson = contractJson;
   for (let i = 0; i < PROOF_LENGTH; i++) {
     S_B_E[i] = utils.rndHex(32);
-    pkB[i] = utils.ensure0x(utils.zeroMSBs(utils.strip0x(utils.hash(skB)).padStart(32, '0')));
+    pkB[i] = utils.zeroMSBs(utils.strip0x(utils.hash(skB)));
   }
   S_B_E = (await Promise.all(S_B_E)).map(k => utils.zeroMSBs(k));
   pkB = (await Promise.all(pkB)).map(k => utils.zeroMSBs(k));
   S_A_C = utils.zeroMSBs(await utils.rndHex(32));
-  pkA = utils.ensure0x(utils.zeroMSBs(utils.strip0x(utils.hash(skA)).padStart(32, '0')));
+  pkA = utils.zeroMSBs(utils.strip0x(utils.hash(skA)));
   Z_A_C = utils.zeroMSBs(utils.concatenateThenHash(C, pkA, S_A_C));
 });
 

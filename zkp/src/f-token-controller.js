@@ -188,6 +188,7 @@ async function mint(amount, _ownerPublicKey, _salt, vkId, blockchainOptions) {
   console.log('VerifierRegistry contract address:', verifierRegistry.address);
 
   // Calculate new arguments for the proof:
+  console.log('AMOUNT', amount);
   const commitment = utils.zeroMSBs(utils.concatenateThenHash(amount, ownerPublicKey, salt));
 
   console.group('Existing Proof Variables:');
@@ -308,6 +309,9 @@ async function transfer(
   for (const inputCommitment of inputCommitments) {
     inputCommitment.salt = utils.zeroMSBs(inputCommitment.salt);
     inputCommitment.commitment = utils.zeroMSBs(inputCommitment.commitment);
+  }
+  for (const outputCommitment of outputCommitments) {
+    outputCommitment.salt = utils.zeroMSBs(outputCommitment.salt);
   }
   const senderSecretKey = utils.zeroMSBs(_senderSecretKey);
   const receiverPublicKey = utils.zeroMSBs(_receiverPublicKey);

@@ -413,14 +413,13 @@ hashes an item. It can cope with hex strings or bigints, returning the same type
 as it gets
 */
 function hash(item) {
-  const preimage = strip0x(item.toString(16));
+  const preimage = strip0x(item);
 
   const h = `0x${crypto
     .createHash('sha256')
     .update(preimage, 'hex')
     .digest('hex')
     .slice(-(inputsHashLength * 2))}`;
-  if (typeof item === 'bigint') return BigInt(h); // eslint-disable-line valid-typeof
   return h;
 }
 
@@ -438,14 +437,13 @@ slice: [begin value] outputs the items in the array on and after the 'begin valu
 */
 function concatenateThenHash(...items) {
   const concatvalue = items
-    .map(item => Buffer.from(strip0x(item.toString(16)), 'hex'))
+    .map(item => Buffer.from(strip0x(item), 'hex'))
     .reduce((acc, item) => concatenate(acc, item));
 
   const h = `0x${crypto
     .createHash('sha256')
     .update(concatvalue, 'hex')
     .digest('hex')}`;
-  if (typeof items[0] === 'bigint') return BigInt(h); // eslint-disable-line valid-typeof
   return h;
 }
 
