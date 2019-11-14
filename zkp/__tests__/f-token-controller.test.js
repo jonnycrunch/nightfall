@@ -113,7 +113,7 @@ describe('f-token-controller.js tests', () => {
       C,
       pkA,
       S_A_C,
-      await getVkId('MintCoin'),
+      await getVkId('MintFToken'),
       {
         account: accounts[0],
         fTokenShieldJson,
@@ -130,7 +130,7 @@ describe('f-token-controller.js tests', () => {
       D,
       pkA,
       S_A_D,
-      await getVkId('MintCoin'),
+      await getVkId('MintFToken'),
       {
         account: accounts[0],
         fTokenShieldJson,
@@ -154,7 +154,7 @@ describe('f-token-controller.js tests', () => {
       outputCommitments,
       pkB,
       skA,
-      await getVkId('TransferCoin'),
+      await getVkId('TransferFToken'),
       {
         account: accounts[0],
         fTokenShieldJson,
@@ -169,7 +169,7 @@ describe('f-token-controller.js tests', () => {
       G,
       pkB,
       S_B_G,
-      await getVkId('MintCoin'),
+      await getVkId('MintFToken'),
       {
         account: accounts[1],
         fTokenShieldJson,
@@ -193,7 +193,7 @@ describe('f-token-controller.js tests', () => {
       outputCommitments,
       pkE,
       skB,
-      await getVkId('TransferCoin'),
+      await getVkId('TransferFToken'),
       {
         account: accounts[1],
         fTokenShieldJson,
@@ -207,7 +207,7 @@ describe('f-token-controller.js tests', () => {
     const bal = await controller.getBalance(accounts[0]);
     console.log('accounts[3]', bal1.toNumber());
     console.log('accounts[0]', bal.toNumber());
-    await controller.burn(F, skA, sAToAF, Z_A_F, zInd2 + 2, await getVkId('BurnCoin'), {
+    await controller.burn(F, skA, sAToAF, Z_A_F, zInd2 + 2, await getVkId('BurnFToken'), {
       account: accounts[0],
       tokenReceiver: accounts[3],
       fTokenShieldJson,
