@@ -11,6 +11,7 @@ const PROOF_LENGTH = 20;
 const C = '0x00000000000000000000000000000028'; // 128 bits = 16 bytes = 32 chars
 const E = new Array(20).fill('0x00000000000000000000000000000002');
 const skA = '0x0000000000111111111111111111111111111111111111111111111111112111';
+// we could generate these but it's nice to have them fixed in case later testing
 const skB = [
   '0x0000000000111111111111111111111111111111111111111111111111111100',
   '0x0000000000111111111111111111111111111111111111111111111111111101',
@@ -31,10 +32,31 @@ const skB = [
   '0x0000000000111111111111111111111111111111111111111111111111111116',
   '0x0000000000111111111111111111111111111111111111111111111111111117',
   '0x0000000000111111111111111111111111111111111111111111111111111118',
-  '0x0000000000111111111111111111111111111111111111111111111111111119',
+  '0x0000000000111111111111111111111111111111111111111111111111111118', // deliberately the same as the last one - to enable a transfer test
+];
+const S_B_E = [
+  '0x0000000000211111111111111111111111111111111111111111111111111100',
+  '0x0000000000211111111111111111111111111111111111111111111111111101',
+  '0x0000000000211111111111111111111111111111111111111111111111111102',
+  '0x0000000000211111111111111111111111111111111111111111111111111103',
+  '0x0000000000211111111111111111111111111111111111111111111111111104',
+  '0x0000000000211111111111111111111111111111111111111111111111111105',
+  '0x0000000000211111111111111111111111111111111111111111111111111106',
+  '0x0000000000211111111111111111111111111111111111111111111111111107',
+  '0x0000000000211111111111111111111111111111111111111111111111111108',
+  '0x0000000000211111111111111111111111111111111111111111111111111109',
+  '0x0000000000211111111111111111111111111111111111111111111111111110',
+  '0x0000000000211111111111111111111111111111111111111111111111111111',
+  '0x0000000000211111111111111111111111111111111111111111111111111112',
+  '0x0000000000211111111111111111111111111111111111111111111111111113',
+  '0x0000000000211111111111111111111111111111111111111111111111111114',
+  '0x0000000000211111111111111111111111111111111111111111111111111115',
+  '0x0000000000211111111111111111111111111111111111111111111111111116',
+  '0x0000000000211111111111111111111111111111111111111111111111111117',
+  '0x0000000000211111111111111111111111111111111111111111111111111118',
+  '0x0000000000211111111111111111111111111111111111111111111111111119',
 ];
 let S_A_C;
-let S_B_E = [];
 let pkA;
 let pkB = [];
 let Z_A_C;
@@ -53,11 +75,8 @@ beforeAll(async () => {
   fTokenShieldAddress = contractInstance.address;
   fTokenShieldJson = contractJson;
   for (let i = 0; i < PROOF_LENGTH; i++) {
-    S_B_E[i] = utils.rndHex(32);
     pkB[i] = utils.zeroMSBs(utils.strip0x(utils.hash(skB[i])));
-    console.log(i, 'salt', S_B_E[i], 'public key', pkB[i]);
   }
-  S_B_E = (await Promise.all(S_B_E)).map(k => utils.zeroMSBs(k));
   pkB = (await Promise.all(pkB)).map(k => utils.zeroMSBs(k));
   S_A_C = utils.zeroMSBs(await utils.rndHex(32));
   pkA = utils.zeroMSBs(utils.strip0x(utils.hash(skA)));
@@ -91,6 +110,11 @@ describe('f-token-controller.js tests', () => {
         fTokenShieldJson,
         fTokenShieldAddress,
       },
+      {
+        codePath: `${process.cwd()}/code/gm17/ft-mint/out`,
+        outputDirectory: `${process.cwd()}/code/gm17/ft-mint`,
+        pkPath: `${process.cwd()}/code/gm17/ft-mint/proving.key`,
+      },
     );
     zInd1 = parseInt(zIndex, 10);
     expect(Z_A_C).toEqual(zTest);
@@ -115,6 +139,11 @@ describe('f-token-controller.js tests', () => {
         account: accounts[0],
         fTokenShieldJson,
         fTokenShieldAddress,
+      },
+      {
+        codePath: `${process.cwd()}/code/gm17/ft-batch-transfer/out`,
+        outputDirectory: `${process.cwd()}/code/gm17/ft-batch-transfer`,
+        pkPath: `${process.cwd()}/code/gm17/ft-batch-transfer/proving.key`,
       },
     );
 
@@ -146,12 +175,17 @@ describe('f-token-controller.js tests', () => {
       inputCommitments,
       outputCommitments,
       pkE,
-      skB,
+      skB[18],
       await getVkId('TransferFToken'),
       {
         account: accounts[0],
         fTokenShieldJson,
         fTokenShieldAddress,
+      },
+      {
+        codePath: `${process.cwd()}/code/gm17/ft-transfer/out`,
+        outputDirectory: `${process.cwd()}/code/gm17/ft-transfer`,
+        pkPath: `${process.cwd()}/code/gm17/ft-transfer/proving.key`,
       },
     );
   });
