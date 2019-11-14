@@ -112,7 +112,7 @@ describe('f-token-controller.js tests', () => {
       skA,
       await getVkId('SimpleBatchTransferFToken'),
       {
-        account: accounts[1],
+        account: accounts[0],
         fTokenShieldJson,
         fTokenShieldAddress,
       },
@@ -149,7 +149,7 @@ describe('f-token-controller.js tests', () => {
       skB,
       await getVkId('TransferFToken'),
       {
-        account: accounts[1],
+        account: accounts[0],
         fTokenShieldJson,
         fTokenShieldAddress,
       },
