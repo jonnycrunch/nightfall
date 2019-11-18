@@ -11,6 +11,7 @@ import fs from 'fs';
 import config from 'config';
 import utils from './zkpUtils';
 import Web3 from './web3';
+import logger from './logger';
 
 const NFtokenShield = contract(jsonfile.readFileSync('./build/contracts/NFTokenShield.json'));
 NFtokenShield.setProvider(Web3.connect());
@@ -39,7 +40,7 @@ E.g. TokenMint, TokenTransfer, CoinMint, CoinBurn, AgreeContract,...
 @param {string} account - the account from which the vk's are being uploaded (also used in creating the vkId)
 */
 async function loadVk(vkJsonFile, vkDescription, account) {
-  console.log('\nDEPLOYING VK FOR', vkDescription);
+  logger.verbose('\nDEPLOYING VK FOR', vkDescription);
 
   // check relevant contracts are deployed:
   const verifier = await Verifier.deployed();
@@ -54,7 +55,7 @@ async function loadVk(vkJsonFile, vkDescription, account) {
   vk = vk.map(el => utils.hexToDec(el));
 
   // upload the vk to the smart contract
-  console.log('Registering verifying key');
+  logger.debug('Registering verifying key');
   const txReceipt = await verifierRegistry.registerVk(vk, [verifier.address], {
     from: account,
     gas: 6500000,
@@ -73,13 +74,13 @@ async function loadVk(vkJsonFile, vkDescription, account) {
   await new Promise((resolve, reject) => {
     fs.writeFile(config.VK_IDS, vkIdsAsJson, err => {
       if (err) {
-        console.log(
+        logger.error(
           `fs.writeFile has failed when writing the new vk information to vkIds.json. Here's the error:`,
         );
         reject(err);
       }
-      console.log(vkIds[vkDescription]);
-      console.log(`writing to ${config.VK_IDS}`);
+      logger.debug(vkIds[vkDescription]);
+      logger.debug(`writing to ${config.VK_IDS}`);
       resolve();
     });
   });
@@ -90,7 +91,7 @@ Reads the vkIds json from file
 */
 async function getVkIds() {
   if (fs.existsSync(config.VK_IDS)) {
-    console.log('Reading vkIds from json file...');
+    logger.debug('Reading vkIds from json file...');
     vkIds = await new Promise((resolve, reject) => {
       jsonfile.readFile(config.VK_IDS, (err, data) => {
         // doesn't natively support promises
@@ -111,7 +112,7 @@ async function setVkIds(account) {
 
   await getVkIds();
 
-  console.log('Setting vkIds within NFTokenShield');
+  logger.debug('Setting vkIds within NFTokenShield');
   await nfTokenShield.setVkIds(
     vkIds.MintNFToken.vkId,
     vkIds.TransferNFToken.vkId,
@@ -123,7 +124,7 @@ async function setVkIds(account) {
     },
   );
 
-  console.log('Setting vkIds within fTokenShield');
+  logger.debug('Setting vkIds within fTokenShield');
   await fTokenShield.setVkIds(
     vkIds.MintFToken.vkId,
     vkIds.TransferFToken.vkId,
@@ -161,7 +162,7 @@ async function vkController() {
 
   await setVkIds(account);
 
-  console.log('VK setup complete');
+  logger.verbose('VK setup complete');
 }
 
 async function runController() {
