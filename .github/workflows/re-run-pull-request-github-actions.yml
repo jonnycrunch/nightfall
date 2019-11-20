@@ -1,4 +1,4 @@
-name: Re-run github actions of pull request
+name: Re-run Pull-Request's last github actions
 
 on:
   push:
@@ -13,9 +13,10 @@ jobs:
   re-run-github-actions:
     runs-on: ubuntu-latest
     steps:
+      - name: GET & PUT Github API calls
       - uses: actions/github-script@0.2.0
         with:
-          github-token: ${{github.token}}
+          github-token: ${{secrets.PAT}}
           script: |
             const owner = context.payload.sender.login;
             const repo = context.payload.repository.name;
