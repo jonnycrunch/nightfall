@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: GET & PUT Github API calls
-      - uses: actions/github-script@0.2.0
+        uses: actions/github-script@0.2.0
         with:
           github-token: ${{secrets.PAT}}
           script: |
