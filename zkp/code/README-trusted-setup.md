@@ -145,6 +145,12 @@ zkp
 `-s` is included, then lengthy console outputs will be suppressed. If `-s` is not included, all of
 the zokrates console outputs will be streamed to your console.
 
+### Running Compute Witness
+
+Compute witness can be run independently by running
+`npm run computeWitness -- -i <file-name> -a <space-separated-arg-list-in-quotes>` from the root
+directory.
+
 ## Mounting
 
 `npm run setup` will bind-mount from your local machine to a containerized image of zokrates.
@@ -156,6 +162,5 @@ the zokrates console outputs will be streamed to your console.
 - Run the following zokrates commands within a mounted container:
   - compile
   - setup
-  - compute-witness (if the optional -a argument is given)
   - export-verifier
 - Save any newly created files in path/to/nightfall/zkp/code/gm17/parent-dir-of-pcode/
