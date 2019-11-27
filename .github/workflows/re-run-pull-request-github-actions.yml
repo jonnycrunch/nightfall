@@ -15,14 +15,11 @@ jobs:
     steps:
       - name: (GET-&-PUT Github API) Push empty commit to PR branch
         uses: actions/github-script@0.2.0
-        env:
-          GITHUB_TOKEN: secrets.PAT
         with:
           github-token: ${{secrets.PAT}}
           script: |
             const owner = context.payload.sender.login;
             const repo = context.payload.repository.name;
-            console.log(GITHUB_TOKEN);
             const {data: pullRequests} = await github.pulls.list({
               owner,
               repo,
@@ -69,4 +66,8 @@ jobs:
               });
               */
             }
+      - name: Hello world
+        run: echo Hello world $GITHUB_TOKEN
+        env:
+          GITHUB_TOKEN: ${{secrets.PAT}}
 
