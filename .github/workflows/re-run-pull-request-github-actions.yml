@@ -27,7 +27,7 @@ jobs:
               base: "master",
               state: "open"
             });
-
+            console.log("no of pull request", pullRequests.length);
             for (pr of pullRequests) {
 
               let pullReq = {};
