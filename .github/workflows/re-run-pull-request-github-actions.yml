@@ -20,7 +20,7 @@ jobs:
           script: |
             const owner = context.payload.sender.login;
             const repo = context.payload.repository.name;
-            console.log(secrets.PAT, github.token, github-token);
+            console.log(github.token, github-token);
             const {data: pullRequests} = await github.pulls.list({
               owner,
               repo,
