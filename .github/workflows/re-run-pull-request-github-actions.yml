@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Hello world
-        run: echo Hello world $GITHUB_TOKENZ
+        run: echo Hello world $GITHUB_TOKEN
         env:
-          GITHUB_TOKEN: ${{secrets.PAT}}
+          GITHUB_TOKEN: ${{secrets.PATT}}
       - name: (GET-&-PUT Github API) Push empty commit to PR branch
         uses: actions/github-script@0.2.0
         with:
