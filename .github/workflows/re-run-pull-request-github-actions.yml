@@ -16,7 +16,7 @@ jobs:
       - name: Hello world
         run: echo Hello world $GITHUB_TOKEN
         env:
-          GITHUB_TOKEN: ${{secrets.PATT}}
+          GITHUB_TOKEN: ${{secrets.PAT}}
       - name: (GET-&-PUT Github API) Push empty commit to PR branch
         uses: actions/github-script@0.2.0
         with:
