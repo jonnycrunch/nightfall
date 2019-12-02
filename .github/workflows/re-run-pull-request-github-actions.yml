@@ -23,17 +23,16 @@ jobs:
           github-token: ${{secrets.PAT}}
           debug: true
           script: |
-            const owner = "EYBlockchain" || context.payload.sender.login;
+            console.log(context);
+            const owner = "EYBlockchain"
             const repo = context.payload.repository.name;
-            const data = await github.pulls.list({
+            const {data: pullRequests} = await github.pulls.list({
               owner,
               repo,
               base: "master",
-              state: "open"
+              state: "open",
             });
-            const pullRequests = data.data;
-            console.log(data);
-            console.log("no of pull request", pullRequests.length);
+          
             for (pr of pullRequests) {
 
               let pullReq = {};
@@ -42,7 +41,7 @@ jobs:
                   await github.pulls.get({
                     owner,
                     repo,
-                    pull_number: pr.number
+                    pull_number: pr.number,
                   })
                 ).data;
               }
@@ -51,20 +50,20 @@ jobs:
               const {data: commitData} = await github.repos.getCommit({
                 owner,
                 repo,
-                ref: pullReq.head.sha
+                ref: pullReq.head.sha,
               });
-              console.log(commitData)
-              /*
+
               const {data: createdCommit} = await github.git.createCommit({
                 owner,
                 repo,
                 message: "tigger github actions",
                 tree: commitData.commit.tree.sha,
                 parents: [commitData.sha],
-                commiter: context.payload.pusher,
-                author: context.payload.pusher,
               });
 
+              console.log(createdCommit.sha);
+
+              /*
               await github.git.updateRef({
                 owner,
                 repo,
