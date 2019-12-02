@@ -52,20 +52,20 @@ function mimcpe7mp(x, k, seed, roundCount, m = BigInt(config.ZOKRATES_PRIME)) {
   return r;
 }
 
-function mimcHash(...msgs) {
+function mimcHash(...msgs) { //elipses means input stored in array called msgs
   const mimc = '0x6d696d63'; // this is 'mimc' in hex as a nothing-up-my-sleeve seed
-  return `0x${mimcpe7mp(
+  return `0x${mimcpe7mp( // '${' notation '0x${x}' -> '0x34' w/ x=34
     msgs.map(e => {
       const f = BigInt(e);
       if (f > config.ZOKRATES_PRIME) throw new Error('MiMC input exceeded prime field size');
       return f;
     }),
-    BigInt(0),
-    utils.keccak256Hash(mimc),
-    91,
+    BigInt(0), //k
+    utils.keccak256Hash(mimc), //seed
+    91, //rounds of hashing
   )
-    .toString(16)
-    .padStart(64, '0')}`;
+    .toString(16) //hex string - can remove 0s
+    .padStart(64, '0')}`; //so pad
 }
 
 export default { mimcHash };
