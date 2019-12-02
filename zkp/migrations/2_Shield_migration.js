@@ -7,9 +7,13 @@ const FToken = artifacts.require('FToken.sol');
 const NFTokenMetadata = artifacts.require('NFTokenMetadata.sol');
 const FTokenShield = artifacts.require('FTokenShield.sol');
 const NFTokenShield = artifacts.require('NFTokenShield.sol');
+const MiMC_Hash = artifacts.require('MiMC_Hash');
 
 module.exports = function(deployer) {
   deployer.then(async () => {
+
+    await deployer.deploy(MiMC_Hash);
+
     await deployer.deploy(Verifier_Registry);
 
     await deployer.deploy(BN256G2);

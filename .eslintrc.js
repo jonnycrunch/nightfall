@@ -8,6 +8,7 @@ module.exports = {
     'no-console': 'off',
     'no-restricted-syntax': 'off',
     'no-plusplus': 'off',
+    'no-bitwise': 'off',
     'import/no-extraneous-dependencies': [
       'error',
       {
