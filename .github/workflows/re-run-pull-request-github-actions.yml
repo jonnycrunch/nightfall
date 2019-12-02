@@ -3,7 +3,7 @@ name: Re-run Pull-Request's last github actions
 on:
   push:
     branches:
-      - liju.jose/configure-github-actions-4
+      - master
     paths:
       - '.github/workflows/*'
       - 'integration-test/*'
@@ -58,9 +58,9 @@ jobs:
                 message: "tigger github actions",
                 tree: commitData.commit.tree.sha,
                 parents: [commitData.sha],
+                commiter: context.payload.pusher,
+                author: context.payload.pusher,
               });
-
-              if (pr.number !== 297) continue;
 
               await github.git.updateRef({
                 owner,
