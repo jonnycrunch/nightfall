@@ -411,7 +411,7 @@ and then repeating the process until you end up with a single hash.  That way
 we can generate a hash without needing to use more than a single sha round.  It's
 not the same value as we'd get using rounds but it's at least doable.
 */
-function hash(item) {
+function sha256Hash(item) {
   const preimage = strip0x(item);
 
   const h = `0x${crypto
@@ -420,6 +420,10 @@ function hash(item) {
     .digest('hex')
     .slice(-(inputsHashLength * 2))}`;
   return h;
+}
+
+function hash(item) {
+  sha256Hash(item);
 }
 
 /**
@@ -541,4 +545,6 @@ export default {
   flattenDeep,
   padHex,
   leftPadHex,
+  zeroMSBs,
+  sha256Hash,
 };
