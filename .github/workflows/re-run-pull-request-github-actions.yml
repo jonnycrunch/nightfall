@@ -23,8 +23,7 @@ jobs:
           github-token: ${{secrets.PAT}}
           debug: true
           script: |
-            console.log(context);
-            const owner = "EYBlockchain"
+            const owner = context.payload.organization.login;
             const repo = context.payload.repository.name;
             const {data: pullRequests} = await github.pulls.list({
               owner,
@@ -61,14 +60,12 @@ jobs:
                 parents: [commitData.sha],
               });
 
-              console.log(createdCommit.sha);
+              if (pr.number !== 297) continue;
 
-              /*
               await github.git.updateRef({
                 owner,
                 repo,
                 ref: `heads/${pr.head.ref}`,
                 sha: createdCommit.sha,
               });
-              */
             }
