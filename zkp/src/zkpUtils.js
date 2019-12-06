@@ -369,7 +369,7 @@ function sha256Hash(item) {
 }
 
 function hash(item) {
-  sha256Hash(item);
+  return sha256Hash(item);
 }
 
 /**
