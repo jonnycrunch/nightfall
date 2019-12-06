@@ -21,7 +21,8 @@ library MiMC
     function Encipher( uint256 in_x, uint256 in_k )
         public pure returns(uint256 out_x)
     {
-        return MiMCpe7( in_x, in_k, uint256(keccak256("mimc")), 91 );
+        bytes4 seed = 0x6d696d63; //this is 'mimc' in hex
+        return MiMCpe7( in_x, in_k, uint256(keccak256(abi.encodePacked(seed))), 91 );
     }
 
     /**
@@ -56,7 +57,9 @@ library MiMC
             }
 
             // Result adds key again as blinding factor
-            out_x := addmod(in_x, in_k, localQ)
+            // out_x := addmod(in_x, in_k, localQ)
+            out_x := a
+            // out_x := mload(c)
         }
     }
 
@@ -70,19 +73,28 @@ library MiMC
         {
             r = (r + in_x[i] + MiMCpe7(in_x[i], r, in_seed, round_count)) % localQ;
         }
-
-        return r;
+        // return r;
+        return MiMCpe7(in_x[0], r, in_seed, round_count);
     }
 
     function Hash( uint256[] memory in_msgs, uint256 in_key )
         public pure returns (uint256)
     {
-        return MiMCpe7_mp( in_msgs, in_key, uint256(sha256("mimc")), 91 );
+        bytes4 seed = 0x6d696d63; //this is 'mimc' in hex
+        return MiMCpe7_mp( in_msgs, in_key, uint256(keccak256(abi.encodePacked(seed))), 12 );
     }
 
     function Hash( uint256[] memory in_msgs )
         public pure returns (uint256)
     {
         return Hash( in_msgs, 0 );
+    }
+
+    function testModMul() public pure returns(uint256 a) {
+      assembly{
+        let t := 14686898617697374517354030448549207100630038260701390942534165322324606310525
+        let localQ := 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
+        a := mulmod(t, t, localQ)                                              // t^2
+      }
     }
 }

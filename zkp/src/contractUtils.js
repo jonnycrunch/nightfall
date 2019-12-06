@@ -12,7 +12,7 @@ const contractMapping = {
   FToken: './build/contracts/FToken.json',
   Verifier: './build/contracts/GM17_v0.json',
   VerifierRegistry: './build/contracts/Verifier_Registry.json',
-  MiMCHash: './build/contracts/MiMC_Hash.json',
+  MiMC: './build/contracts/MiMC.json',
 };
 
 export async function getVkId(actionName) {
