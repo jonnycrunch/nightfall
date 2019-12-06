@@ -8,8 +8,8 @@ Ethereum and Zokrates
 import BI from 'big-integer';
 import hexToBinary from 'hex-to-binary';
 import crypto from 'crypto';
-import { Buffer } from 'safe-buffer';
 import createKeccakHash from 'keccak';
+import { Buffer } from 'safe-buffer';
 
 const inputsHashLength = 32;
 
@@ -369,7 +369,7 @@ function sha256Hash(item) {
 }
 
 function hash(item) {
-  sha256Hash(item);
+  return sha256Hash(item);
 }
 
 /**
