@@ -65,6 +65,7 @@ describe('MiMC hash tests', () => {
     console.log('blockchain', testHash.toString(10));
     // expect(hash).toEqual(testHash);
   });
+<<<<<<< HEAD
 >>>>>>> feat(zkp): debugging mimc hash
   test('test modMul function', async () => {
     const t = BigInt(
@@ -89,4 +90,6 @@ describe('MiMC hash tests', () => {
 >>>>>>> feat(zkp): debugging mimc hash
   });
 >>>>>>> feat(zkp): add mimc hash functions
+=======
+>>>>>>> feat(zkp): intermediate save
 });
