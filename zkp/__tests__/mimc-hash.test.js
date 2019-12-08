@@ -29,6 +29,7 @@ describe('MiMC hash tests', () => {
     console.log('blockchain', testHash.toString(10));
     // expect(hash).toEqual(testHash);
   });
+<<<<<<< HEAD
   test('test modMul function', async () => {
     const t = BigInt(
       '14686898617697374517354030448549207100630038260701390942534165322324606310525',
@@ -40,4 +41,6 @@ describe('MiMC hash tests', () => {
     expect(result.toString(10)).toEqual(test.toString(10));
 >>>>>>> feat(zkp): debugging mimc hash
   });
+=======
+>>>>>>> feat(zkp): intermediate save
 });

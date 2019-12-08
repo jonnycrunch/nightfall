@@ -66,12 +66,16 @@ library MiMC
 
             // Result adds key again as blinding factor
 <<<<<<< HEAD
+<<<<<<< HEAD
             out_x := addmod(in_x, in_k, localQ)
 =======
             // out_x := addmod(in_x, in_k, localQ)
             out_x := a
             // out_x := mload(c)
 >>>>>>> feat(zkp): debugging mimc hash
+=======
+            out_x := addmod(in_x, in_k, localQ)
+>>>>>>> feat(zkp): intermediate save
         }
     }
 
@@ -80,6 +84,7 @@ library MiMC
     {
         uint256 r = in_k;
         uint256 localQ = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
+<<<<<<< HEAD
 <<<<<<< HEAD
         uint256 i;
         for( i = 0; i < in_x.length; i++ )
@@ -90,18 +95,27 @@ library MiMC
 =======
 
         for( uint256 i = 0; i < in_x.length; i++ )
+=======
+        uint256 i;
+        for( i = 0; i < in_x.length; i++ )
+>>>>>>> feat(zkp): intermediate save
         {
             r = (r + in_x[i] + MiMCpe7(in_x[i], r, in_seed, round_count)) % localQ;
         }
         // return r;
+<<<<<<< HEAD
         return MiMCpe7(in_x[0], r, in_seed, round_count);
 >>>>>>> feat(zkp): debugging mimc hash
+=======
+        return k + x[0] + MiMCpe7(in_x[0], in_k, in_seed, round_count);
+>>>>>>> feat(zkp): intermediate save
     }
 
     function Hash( uint256[] memory in_msgs, uint256 in_key )
         public pure returns (uint256)
     {
         bytes4 seed = 0x6d696d63; //this is 'mimc' in hex
+<<<<<<< HEAD
 <<<<<<< HEAD
         return MiMCpe7_mp( in_msgs, in_key, uint256(keccak256(abi.encodePacked(seed))), 91 );
     }
@@ -118,6 +132,9 @@ library MiMC
   }
 =======
         return MiMCpe7_mp( in_msgs, in_key, uint256(keccak256(abi.encodePacked(seed))), 12 );
+=======
+        return MiMCpe7_mp( in_msgs, in_key, uint256(keccak256(abi.encodePacked(seed))), 91 );
+>>>>>>> feat(zkp): intermediate save
     }
 
     function Hash( uint256[] memory in_msgs )
@@ -125,6 +142,7 @@ library MiMC
     {
         return Hash( in_msgs, 0 );
     }
+<<<<<<< HEAD
 
     function testModMul() public pure returns(uint256 a) {
       assembly{
@@ -135,3 +153,6 @@ library MiMC
     }
 }
 >>>>>>> feat(zkp): debugging mimc hash
+=======
+  }
+>>>>>>> feat(zkp): intermediate save
