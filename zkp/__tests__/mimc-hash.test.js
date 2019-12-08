@@ -19,14 +19,4 @@ describe('MiMC hash tests', () => {
     console.log('blockchain', testHash.toString(10));
     // expect(hash).toEqual(testHash);
   });
-  test('test modMul function', async () => {
-    const t = BigInt(
-      '14686898617697374517354030448549207100630038260701390942534165322324606310525',
-    );
-    const localQ = BigInt('0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001');
-    const result = await contractInstance.testModMul.call();
-    const test = (t * t) % localQ;
-    console.log('results', result.toString(10), test.toString(10));
-    expect(result.toString(10)).toEqual(test.toString(10));
-  });
 });
