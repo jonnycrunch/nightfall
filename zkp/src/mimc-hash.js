@@ -23,18 +23,14 @@ function powerMod(base, exponent, m) {
 import config from './config';
 import utils from './zkpUtils';
 
-function mod(a, m) {
-  return ((a % m) + m) % m;
-}
-
 function addMod(addMe, m) {
-  return addMe.reduce((e, acc) => mod(e + acc, m), BigInt(0));
+  return addMe.reduce((e, acc) => (e + acc) % m, BigInt(0));
 }
 
 function powerMod(base, exponent, m) {
   if (m === BigInt(1)) return BigInt(0);
   let result = BigInt(1);
-  let b = mod(base, m);
+  let b = base % m;
   let e = exponent;
 <<<<<<< HEAD
   while (e > 0) {
@@ -44,10 +40,14 @@ function powerMod(base, exponent, m) {
     b = (b * b) % m;
 =======
   while (e > BigInt(0)) {
-    if (e % BigInt(2) === BigInt(1)) result = mod(result * b, m);
+    if (e % BigInt(2) === BigInt(1)) result = (result * b) % m;
     e >>= BigInt(1);
+<<<<<<< HEAD
     b = mod(b * b, m);
 >>>>>>> feat(zkp): debugging mimc hash
+=======
+    b = (b * b) % m;
+>>>>>>> feat(zkp): solidity and node versions of MiMC agree
   }
   return result;
 }
@@ -110,12 +110,15 @@ function mimcpe7mp(x, k, seed, roundCount, m = BigInt(config.ZOKRATES_PRIME)) {
 =======
   let i;
   for (i = 0; i < x.length; i++) {
+<<<<<<< HEAD
 >>>>>>> feat(zkp): intermediate save
     r = (r + x[i] + mimcpe7(x[i], r, seed, roundCount, m)) % m;
 >>>>>>> feat(zkp): debugging mimc hash
+=======
+    r = (r + (x[i] % m) + mimcpe7(x[i], r, seed, roundCount, m)) % m;
+>>>>>>> feat(zkp): solidity and node versions of MiMC agree
   }
-  return k + x[0] + mimcpe7(x[0], k, seed, roundCount, m);
-  // return r;
+  return r;
 }
 
 <<<<<<< HEAD

@@ -10,20 +10,12 @@ pragma solidity ^0.5.0;
 *
 * Round constants are generated in sequence from a seed
 */
-<<<<<<< HEAD
 contract MiMC
-=======
-library MiMC
->>>>>>> feat(zkp): debugging mimc hash
 {
     function GetScalarField ()
         internal pure returns (uint256)
     {
-<<<<<<< HEAD
         return 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001; //base of field used
-=======
-        return 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
->>>>>>> feat(zkp): debugging mimc hash
     }
 
     function Encipher( uint256 in_x, uint256 in_k )
@@ -65,17 +57,7 @@ library MiMC
             }
 
             // Result adds key again as blinding factor
-<<<<<<< HEAD
-<<<<<<< HEAD
             out_x := addmod(in_x, in_k, localQ)
-=======
-            // out_x := addmod(in_x, in_k, localQ)
-            out_x := a
-            // out_x := mload(c)
->>>>>>> feat(zkp): debugging mimc hash
-=======
-            out_x := addmod(in_x, in_k, localQ)
->>>>>>> feat(zkp): intermediate save
         }
     }
 
@@ -84,39 +66,18 @@ library MiMC
     {
         uint256 r = in_k;
         uint256 localQ = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001;
-<<<<<<< HEAD
-<<<<<<< HEAD
         uint256 i;
         for( i = 0; i < in_x.length; i++ )
         {
             r = (r + (in_x[i] % localQ) + MiMCpe7(in_x[i], r, in_seed, round_count)) % localQ;
         }
         return r;
-=======
-
-        for( uint256 i = 0; i < in_x.length; i++ )
-=======
-        uint256 i;
-        for( i = 0; i < in_x.length; i++ )
->>>>>>> feat(zkp): intermediate save
-        {
-            r = (r + in_x[i] + MiMCpe7(in_x[i], r, in_seed, round_count)) % localQ;
-        }
-        // return r;
-<<<<<<< HEAD
-        return MiMCpe7(in_x[0], r, in_seed, round_count);
->>>>>>> feat(zkp): debugging mimc hash
-=======
-        return k + x[0] + MiMCpe7(in_x[0], in_k, in_seed, round_count);
->>>>>>> feat(zkp): intermediate save
     }
 
     function Hash( uint256[] memory in_msgs, uint256 in_key )
         public pure returns (uint256)
     {
         bytes4 seed = 0x6d696d63; //this is 'mimc' in hex
-<<<<<<< HEAD
-<<<<<<< HEAD
         return MiMCpe7_mp( in_msgs, in_key, uint256(keccak256(abi.encodePacked(seed))), 91 );
     }
 
@@ -130,29 +91,3 @@ library MiMC
         return bytes32(Hash( msgs, 0 ));
     }
   }
-=======
-        return MiMCpe7_mp( in_msgs, in_key, uint256(keccak256(abi.encodePacked(seed))), 12 );
-=======
-        return MiMCpe7_mp( in_msgs, in_key, uint256(keccak256(abi.encodePacked(seed))), 91 );
->>>>>>> feat(zkp): intermediate save
-    }
-
-    function Hash( uint256[] memory in_msgs )
-        public pure returns (uint256)
-    {
-        return Hash( in_msgs, 0 );
-    }
-<<<<<<< HEAD
-
-    function testModMul() public pure returns(uint256 a) {
-      assembly{
-        let t := 14686898617697374517354030448549207100630038260701390942534165322324606310525
-        let localQ := 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
-        a := mulmod(t, t, localQ)                                              // t^2
-      }
-    }
-}
->>>>>>> feat(zkp): debugging mimc hash
-=======
-  }
->>>>>>> feat(zkp): intermediate save
