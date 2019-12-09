@@ -69,10 +69,9 @@ library MiMC
         uint256 i;
         for( i = 0; i < in_x.length; i++ )
         {
-            r = (r + in_x[i] + MiMCpe7(in_x[i], r, in_seed, round_count)) % localQ;
+            r = (r + (in_x[i] % localQ) + MiMCpe7(in_x[i], r, in_seed, round_count)) % localQ;
         }
-        // return r;
-        return k + x[0] + MiMCpe7(in_x[0], in_k, in_seed, round_count);
+        return r;
     }
 
     function Hash( uint256[] memory in_msgs, uint256 in_key )
