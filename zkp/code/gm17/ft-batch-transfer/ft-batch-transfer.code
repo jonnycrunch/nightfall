@@ -3,8 +3,10 @@ import "hashes/sha256/1024bit.code" as sha256of1024
 import "hashes/sha256/512bit.code" as sha256of512
 import "utils/pack/unpack128.code" as unpack128
 import "utils/pack/nonStrictUnpack256.code" as unpack256
+import "utils/pack/pack128.code" as pack128
 import "hashes/sha256/IVconstants.code" as IVconstants
 import "hashes/sha256/shaRoundNoBoolCheck.code" as sha256
+import "../common/mimc-hash-2.zok" as mimc2
 
 // A function that takes 22 field[256] arrays as inputs
 // and applies 11 rounds of sha256 compression.
@@ -39,6 +41,11 @@ def orderedConcatenate216x216(field order, field[216] pathNode, field[216] sibli
 	field[216] left = if order == 0 then pathNode else siblingNode fi
 	field[216] right = if order == 0 then siblingNode else pathNode fi
 	return [...left, ...right]
+
+def orderFields(field order, field pathNode, field siblingNode)->(field[2]):
+	field left = if order == 0 then pathNode else siblingNode fi
+	field right = if order == 0 then siblingNode else pathNode fi
+	return [left, right]
 
 def shaPad432To512(field[432] a)->(field[512]):
 	return [...a, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,1,0,1,1,0,0,0,0]
@@ -145,7 +152,7 @@ def main(field publicInputHash, private field inputValue, private field[2] secre
 
 
 	// First we construct a proof that the nullifier of the input coin is correct:
-	// H(inputSalt|secretKey) = nullifier.
+	// sha(inputSalt|secretKey) = nullifier.
 
 	field[256] secretKeyABits = unpack2xx128To256(secretKeyA)
 	field[256] inputSaltBits = unpack2xx128To256(inputSalt)
@@ -155,7 +162,7 @@ def main(field publicInputHash, private field inputValue, private field[2] secre
   nullifierBitsCheck = sha256of1024(preimage512[0..256], preimage512[256..512], padding512To1024[0..256], padding512To1024[256..512])
   nullifierBits == nullifierBitsCheck
 
-	// H(inputValue|publicKeyA|inputSalt) = Alices commitment is in the Merkle Tree
+	// sha(inputValue|publicKeyA|inputSalt) = Alices commitment is in the Merkle Tree
 
 	// Calculation of publicKeyA from H(secretKeyA)
 	field[256] publicKeyABits = sha256of512(secretKeyABits, padding256To512)
@@ -165,19 +172,18 @@ def main(field publicInputHash, private field inputValue, private field[2] secre
   inputValueBits[0] == 0 // overflow check
 	field[640] preimage640 = concatenate128x256x256(inputValueBits, publicKeyABits, inputSaltBits)
 	field[1024] preimage1024 = [...preimage640, ...padding640To1024]
-	field[256] hash = sha256of1024(preimage1024[0..256], preimage1024[256..512], preimage1024[512..768], preimage1024[768..1024]) // commitmentC
+	field[256] shaHash = sha256of1024(preimage1024[0..256], preimage1024[256..512], preimage1024[512..768], preimage1024[768..1024]) // commitmentC
 
-	// concatenate siblings and hash all the way up to the root
+	// concatenate siblings and hash all the way up to the root using a MiMC hash
 	field[128] orderBits = unpack128(order) // need to access an array of bits
+  field mimcHash = mimc2([pack128(shaHash[0..128]), pack128(shaHash[128..256])]) //MiMic hash 216 bits of the sha256 for path computation (which uses MiMC)
 	for field i in 0..32 do
 		field j = 31-i
     field k = 127-i
-		preimage512 = shaPad432To512(orderedConcatenate216x216(orderBits[k], hash[40..256], unpackSiblingNode(path[j])))
-		hash = sha256of512(preimage512[0..256], preimage512[256..512])
+    mimcHash = mimc2(orderFields(orderBits[k], mimcHash, path[j]))
 	endfor
 	// check we have indeed recovered the root:
-  rootBits = unpack2xx128To256(root)
-  rootBits == hash
+  root[1] == mimcHash // root[0] contains nothing and is just there for legacy reasons TODO - remove it.
 
 	// Next up - prove that value is in commitment for all output commitments
 
