@@ -17,18 +17,18 @@ export default class FtCommitmentService {
 
  /**
   * Method to initiate a HTTP request to mint ERC-20 token commitment.
-  * @param A {String} Amount to mint
-  * @param pk_A {String} Public key of Alice
-  * @param S_A {String} Random Serial number
+  * @param amount {String} Amount to mint
+  * @param ownerPublicKey {String} Public key of Alice
+  * @param salt {String} Random Serial number
   */
- mintFTCommitment(A: string, pk_A: string) {
+ mintFTCommitment(amount: string, ownerPublicKey: string) {
   const httpOptions = {
     headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
   };
 
   const body = {
-    A: A,
-    pk_A
+    amount,
+    ownerPublicKey
   };
 
   const url = config.apiGateway.root + 'mintFTCommitment';
@@ -63,11 +63,11 @@ export default class FtCommitmentService {
    * @param pk_A {String} Public key of Alice
    */
   burnFTCommitment (
-    A: string,
-    S_A: string,
-    z_A_index: string,
-    z_A: string,
-    pk_A: string,
+    amount: string,
+    salt: string,
+    commitmentIndex: string,
+    commitment: string,
+    ownerPublicKey: string,
     payTo: string
   ) {
     const httpOptions = {
@@ -75,11 +75,11 @@ export default class FtCommitmentService {
     };
 
     const body = {
-      A,
-      S_A,
-      pk_A,
-      z_A_index,
-      z_A,
+      amount,
+      salt,
+      ownerPublicKey,
+      commitmentIndex,
+      commitment,
       payTo
     };
     const url = config.apiGateway.root + 'burnFTCommitment';
@@ -92,52 +92,57 @@ export default class FtCommitmentService {
    *
    * Method to initiate a HTTP request to transfer ERC-20 token commitments.
    *
-   * @param C {String} Amount of selected token1
-   * @param D {String} Amount of selected token2
-   * @param E {String} Amount of token to transfer
-   * @param F {String} Amount of token after transfer
-   * @param pk_B {String} Public key of Bob
-   * @param S_C {String} Serial number of token1
-   * @param S_D {String} Serial number of token2
-   * @param z_C_index {String} Token1 commitment index
-   * @param z_D_index {String} Token2 commitment index
-   * @param S_E {String} Serial number of token to transfer
-   * @param S_F {String} Serial number of change token
-   * @param z_C {String} Token1 commitment
-   * @param z_D {String} Token2 commitment
-   * @param pk_A {String} Public key of Alice
-   * @param receiver_name {String} Rceiver name
+   * @param firstTokenAmount {String} Amount of selected token1
+   * @param secondTokenAmount {String} Amount of selected token2
+   * @param transferredAmount {String} Amount of token to transfer
+   * @param changeAmount {String} Amount of token after transfer
+   * @param receiverPublicKey {String} Public key of Bob
+   * @param saltOfFirstToken {String} Serial number of token1
+   * @param saltOfSecondToken {String} Serial number of token2
+   * @param firstCommitmentIndex {String} Token1 commitment index
+   * @param secondCommitmentIndex {String} Token2 commitment index
+   * @param transferredSalt {String} Serial number of token to transfer
+   * @param changeSalt {String} Serial number of change token
+   * @param commitmentOfFirstToken {String} Token1 commitment
+   * @param commitmentOfSecondToken {String} Token2 commitment
+   * @param ownerPublicKey {String} Public key of Alice
+   * @param receiver {String} Rceiver name
    */
   transferFTCommitment (
-    C: string,
-    D: string,
-    E: string,
-    F: string,
-    S_C: string,
-    S_D: string,
-    z_C_index: string,
-    z_D_index: string,
-    z_C: string,
-    z_D: string,
-    pk_A: string,
-    receiver_name) {
+    firstTokenAmount: string,
+    secondTokenAmount: string,
+    transferredAmount: string,
+    changeAmount: string,
+    saltOfFirstToken: string,
+    saltOfSecondToken: string,
+    firstCommitmentIndex: string,
+    secondCommitmentIndex: string,
+    commitmentOfFirstToken: string,
+    commitmentOfSecondToken: string,
+    ownerPublicKey: string,
+    receiver) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
-
+    const firstToken = {
+      amount: firstTokenAmount,
+      salt: saltOfFirstToken,
+      commitmentIndex: firstCommitmentIndex,
+      commitment: commitmentOfFirstToken
+    };
+    const secondToken = {
+      amount: secondTokenAmount,
+      salt: saltOfSecondToken,
+      commitmentIndex: secondCommitmentIndex,
+      commitment: commitmentOfSecondToken
+    };
     const body = {
-      C,
-      D,
-      E,
-      F,
-      S_C,
-      S_D,
-      z_C_index,
-      z_D_index,
-      z_C,
-      z_D,
-      pk_A,
-      receiver_name
+      firstToken,
+      secondToken,
+      transferredAmount,
+      changeAmount,
+      ownerPublicKey,
+      receiver
     };
 
     const url = config.apiGateway.root + 'transferFTCommitment';

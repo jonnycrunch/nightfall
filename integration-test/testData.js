@@ -76,24 +76,24 @@ export default {
     return {
       mint: [
         {
-          A: leftPadHex(erc20.toBeMintedAsCommitment[0], 32),
+          amount: leftPadHex(erc20.toBeMintedAsCommitment[0], 32),
           commitmentIndex: 0,
           get commitment() {
             return utils.concatenateThenHash(
-              this.A,
+              this.amount,
               alice.pk,
-              this.S_A === undefined ? '0x0' : this.S_A, // S_A - set at erc-20 commitment mint (step 10)
+              this.salt === undefined ? '0x0' : this.salt, // S_A - set at erc-20 commitment mint (step 10)
             );
           },
         },
         {
-          A: leftPadHex(erc20.toBeMintedAsCommitment[1], 32),
+          amount: leftPadHex(erc20.toBeMintedAsCommitment[1], 32),
           commitmentIndex: 1,
           get commitment() {
             return utils.concatenateThenHash(
-              this.A,
+              this.amount,
               alice.pk,
-              this.S_A === undefined ? '0x0' : this.S_A, // S_A - set at erc-20 commitment mint (step 11)
+              this.salt === undefined ? '0x0' : this.salt, // S_A - set at erc-20 commitment mint (step 11)
             );
           },
         },
@@ -105,7 +105,7 @@ export default {
           return utils.concatenateThenHash(
             this.value,
             bob.pk,
-            this.S_E === undefined ? '0x0' : this.S_E, // S_E - set at erc-20 commitment transfer (step 12)
+            this.transferredSalt === undefined ? '0x0' : this.transferredSalt, // S_E - set at erc-20 commitment transfer (step 12)
           );
         },
       },
@@ -116,7 +116,7 @@ export default {
           return utils.concatenateThenHash(
             this.value,
             alice.pk,
-            this.S_F === undefined ? '0x0' : this.S_F, // S_F - set at erc-20 commitment transfer (step 12)
+            this.changeSalt === undefined ? '0x0' : this.changeSalt, // S_F - set at erc-20 commitment transfer (step 12)
           );
         },
       },

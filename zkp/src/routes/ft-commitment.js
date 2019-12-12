@@ -37,7 +37,7 @@ async function mint(req, res, next) {
     res.data = {
       ft_commitment: commitment,
       ft_commitment_index: commitmentIndex,
-      S_A: salt,
+      salt,
     };
     next();
   } catch (err) {
@@ -47,52 +47,41 @@ async function mint(req, res, next) {
 
 async function transfer(req, res, next) {
   const { address } = req.headers;
-  const {
-    C,
-    D,
-    E,
-    F,
-    pk_B: receiverPublicKey,
-    S_C,
-    S_D,
-    sk_A: senderSecretKey,
-    z_C,
-    z_C_index,
-    z_D,
-    z_D_index,
-  } = req.body;
+  const { transferredAmount, changeAmount, receiverPublicKey, senderSecretKey } = req.body;
   const vkId = await getVkId('TransferFToken');
   const {
     contractJson: fTokenShieldJson,
     contractInstance: fTokenShield,
   } = await getTruffleContractInstance('FTokenShield');
 
-  const inputCommitments = [
-    {
-      value: C,
-      salt: S_C,
-      commitment: z_C,
-      index: z_C_index,
-    },
-    {
-      value: D,
-      salt: S_D,
-      commitment: z_D,
-      index: z_D_index,
-    },
-  ];
+  let { amount: value, salt, commitmentIndex: index, commitment } = req.body.firstToken;
 
+  const inputCommitments = [];
+  inputCommitments.push({
+    value,
+    salt,
+    commitment,
+    index,
+  });
+
+  ({ amount: value, salt, commitmentIndex: index, commitment } = req.body.secondToken);
+
+  inputCommitments.push({
+    value,
+    salt,
+    commitment,
+    index,
+  });
   const outputCommitments = [
     {
-      value: E,
+      value: transferredAmount,
       salt: await utils.rndHex(32),
     },
     {
-      value: F,
+      value: changeAmount,
       salt: await utils.rndHex(32),
     },
   ];
-
   try {
     const {
       outputCommitments: returnedOutputCommitments,
@@ -115,12 +104,12 @@ async function transfer(req, res, next) {
       },
     );
     res.data = {
-      z_E: returnedOutputCommitments[0].commitment,
-      z_E_index: returnedOutputCommitments[0].index,
-      z_F: returnedOutputCommitments[1].commitment,
-      z_F_index: returnedOutputCommitments[1].index,
-      S_E: returnedOutputCommitments[0].salt,
-      S_F: returnedOutputCommitments[1].salt,
+      transferredCommitment: returnedOutputCommitments[0].commitment,
+      transferredCommitmentIndex: returnedOutputCommitments[0].index,
+      changeCommitment: returnedOutputCommitments[1].commitment,
+      changeCommitmentIndex: returnedOutputCommitments[1].index,
+      transferredSalt: returnedOutputCommitments[0].salt,
+      changeSalt: returnedOutputCommitments[1].salt,
       txObj: transferReceipt,
     };
     next();
@@ -159,8 +148,8 @@ async function burn(req, res, next) {
       },
     );
     res.data = {
-      z_C: commitment,
-      z_C_index: commitmentIndex,
+      commitment,
+      commitmentIndex,
     };
     next();
   } catch (err) {

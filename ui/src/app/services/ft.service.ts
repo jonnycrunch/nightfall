@@ -25,8 +25,8 @@ export default class FtService {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
     const body = {
-      amount : amount,
-      account: account
+      amount,
+      account
     };
     const url = config.apiGateway.root + 'mintFToken';
     return this.http
@@ -39,15 +39,15 @@ export default class FtService {
    *
    * @param amount {Number} Amount to transfer
    * @param account {Object} Account object
-   * @param receiver_name {String} Receiver name
+   * @param receiver {String} Receiver name
    */
-  transferFToken(amount, account, receiver_name) {
+  transferFToken(amount, account, receiver) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
     const body = {
-      amount : amount,
-      receiver_name
+      amount,
+      receiver
     };
     const url = config.apiGateway.root + 'transferFToken';
     return this.http
@@ -66,8 +66,8 @@ export default class FtService {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
     const body = {
-      amount : amount,
-      account: account
+      amount,
+      account
     };
     const url = config.apiGateway.root + 'burnFToken';
     return this.http

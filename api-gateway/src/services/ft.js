@@ -85,14 +85,14 @@ export async function mintFToken(req, res, next) {
  * This function will transfer fungible token to a receiver
  * req.body { 
     amount : 200,
-    receiver_name: "Bob"
+    receiver: "Bob"
    }
  * @param {*} req
  * @param {*} res
 */
 export async function transferFToken(req, res, next) {
   try {
-    const receiverAddress = await offchain.getAddressFromName(req.body.receiver_name);
+    const receiverAddress = await offchain.getAddressFromName(req.body.receiver);
 
     await zkp.transferFToken(req.user, {
       amount: req.body.amount,
@@ -104,7 +104,7 @@ export async function transferFToken(req, res, next) {
     await db.insertFTTransaction(req.user, {
       amount: req.body.amount,
       shieldContractAddress: user.selected_coin_shield_contract,
-      receiver: req.body.receiver_name,
+      receiver: req.body.receiver,
       receiverAddress,
       isTransferred: true,
     });
@@ -112,7 +112,7 @@ export async function transferFToken(req, res, next) {
     await whisperTransaction(req, {
       amount: req.body.amount,
       shieldContractAddress: user.selected_coin_shield_contract,
-      receiver: req.body.receiver_name,
+      receiver: req.body.receiver,
       sender: req.user.name,
       senderAddress: req.user.address,
       for: 'FToken',
