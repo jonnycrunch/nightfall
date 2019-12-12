@@ -20,13 +20,13 @@ router.route('/checkCorrectnessForFTCommitment').post(checkCorrectnessForFTCommi
  * @apiName  Mint a ERC-20 commitment
  * @apiGroup ERC-20 commitment
  *
- * @apiParam (Request body) {String} A Hex String of coins.
- * @apiParam (Request body) {String} pk_A Public key of Minter (Alice).
- * @apiParam (Request body) {String} S_A Random generated Salt.
+ * @apiParam (Request body) {String} amount Hex String of coins.
+ * @apiParam (Request body) {String} ownerPublicKey Public key of Minter (Alice).
+ * @apiParam (Request body) {String} salt Random generated Salt.
  *
  * @apiExample {js} Example usage:
  * const data = {
- *    A: '0x00000000000000000000000000002710',
+ *    amount: '0x00000000000000000000000000002710',
  * }
  *
  * $http.post(url, data)
@@ -64,7 +64,7 @@ router.route('/mintFTCommitment').post(mintFTCommitment);
  * @apiParam (Request body) {String} sk_A Secret key of Transferror (Alice).
  * @apiParam (Request body) {String} z_C Coin Commitment of coin C.
  * @apiParam (Request body) {String} z_D Coin Commitment of coin D.
- * @apiParam (Request body) {String} pk_A Public key of Transferror (Alice).
+ * @apiParam (Request body) {String} ownerPublicKey Public key of Transferror (Alice).
  * @apiParam (Request body) {String} receiver_name Name of Receiver.
  * @apiParam (Request body) {String} pk_B Public key of Receiver (Bob).
  *
@@ -83,7 +83,7 @@ router.route('/mintFTCommitment').post(mintFTCommitment);
  *    sk_A: '0x41ced159d5690ef0ccfe5742783057fc9eb12809af2f16f6f98ffd',
  *    z_C: '0x39aaa6fe40c2106f49f72c67bc24d377e180baf3fe211c5c90e254',
  *    z_D: '0x0ca8040181b3fc505eed1ee6892622054ae877ddf8f9dafe93b072',
- *    pk_A: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
+ *    ownerPublicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
  *    receiver_name: 'bob',
  *    pk_B: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef'
  * }
@@ -114,19 +114,19 @@ router.route('/transferFTCommitment').post(transferFTCommitment);
  * @apiName  Burn a ERC-20 commitment
  * @apiGroup ERC-20 commitment
  *
- * @apiParam (Request body) {String} A Hex String of coins.
- * @apiParam (Request body) {String} pk_A Public key of Burner (Alice).
+ * @apiParam (Request body) {String} amount Hex String of coins.
+ * @apiParam (Request body) {String} ownerPublicKey Public key of Burner (Alice).
  * @apiParam (Request body) {String} sk_A Secret key of Burner (Alice).
- * @apiParam (Request body) {String} S_A Slat of coin A.
+ * @apiParam (Request body) {String} salt Slat of coin A.
  * @apiParam (Request body) {String} z_A_index coin index value of coin A.
  * @apiParam (Request body) {String} z_A Coin Commitment of coin A.
  *
  * @apiExample {js} Example usage:
  * const data = {
- *    A: '0x00000000000000000000000000000001',
+ *    amount: '0x00000000000000000000000000000001',
  *    sk_A: '0x283ccbfada111a31df7617deeff4d0daaa3f73b05ba100821d17cc',
- *    S_A: '0xa31adb1074f977413fddd3953e333529a3494e110251368cc823fb',
- *    pk_A: '0xf38da818df95339871ef7c6dcabc2fb90344bbf553c4e688323305',
+ *    salt: '0xa31adb1074f977413fddd3953e333529a3494e110251368cc823fb',
+ *    ownerPublicKey: '0xf38da818df95339871ef7c6dcabc2fb90344bbf553c4e688323305',
  *    z_A_index: 0,
  *    z_A: '0x1ec4a9b406fd3d79a01360ccd14c8530443ea9869f8e9560dafa56'
  * }

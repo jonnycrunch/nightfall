@@ -157,14 +157,14 @@ describe('****** Integration Test ******\n', function() {
           .set('Authorization', alice.token)
           .end((err, res) => {
             if (err) return done(err);
-            expect(res).to.have.nested.property('body.data.S_A');
-            expect(res).to.have.nested.property('body.data.z_A');
-            expect(res).to.have.nested.property('body.data.z_A_index');
+            expect(res).to.have.nested.property('body.data.salt');
+            expect(res).to.have.nested.property('body.data.commitment');
+            expect(res).to.have.nested.property('body.data.commitmentIndex');
 
-            erc721Commitment.S_A = res.body.data.S_A; // set Salt from response to calculate and verify commitment.
+            erc721Commitment.salt = res.body.data.salt; // set Salt from response to calculate and verify commitment.
 
-            expect(res.body.data.z_A).to.be.equal(erc721Commitment.mintCommitment);
-            expect(res.body.data.z_A_index).to.be.equal(erc721Commitment.mintCommitmentIndex);
+            expect(res.body.data.commitment).to.be.equal(erc721Commitment.mintCommitment);
+            expect(res.body.data.commitmentIndex).to.be.equal(erc721Commitment.mintCommitmentIndex);
             return done();
           });
       });
@@ -177,26 +177,30 @@ describe('****** Integration Test ******\n', function() {
           .post('/transferNFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            A: erc721Commitment.tokenID,
+            tokenId: erc721Commitment.tokenId,
             uri: erc721Commitment.uri,
-            S_A: erc721Commitment.S_A,
-            S_B: erc721Commitment.S_B,
-            z_A: erc721Commitment.mintCommitment,
-            receiver_name: bob.name,
-            z_A_index: erc721Commitment.mintCommitmentIndex,
+            salt: erc721Commitment.salt,
+            transferredSalt: erc721Commitment.transferredSalt,
+            commitment: erc721Commitment.mintCommitment,
+            receiver: bob.name,
+            commitmentIndex: erc721Commitment.mintCommitmentIndex,
           })
           .set('Accept', 'application/json')
           .set('Authorization', alice.token)
           .end((err, res) => {
             if (err) return done(err);
-            expect(res).to.have.nested.property('body.data.S_B');
-            expect(res).to.have.nested.property('body.data.z_B');
-            expect(res).to.have.nested.property('body.data.z_B_index');
+            expect(res).to.have.nested.property('body.data.transferredSalt');
+            expect(res).to.have.nested.property('body.data.transferredCommitment');
+            expect(res).to.have.nested.property('body.data.transferredCommitmentIndex');
 
-            erc721Commitment.S_B = res.body.data.S_B; // set Salt from response to calculate and verify commitment.
+            erc721Commitment.transferredSalt = res.body.data.transferredSalt; // set Salt from response to calculate and verify commitment.
 
-            expect(res.body.data.z_B).to.be.equal(erc721Commitment.transferCommitment);
-            expect(res.body.data.z_B_index).to.be.equal(erc721Commitment.transferCommitmentIndex);
+            expect(res.body.data.transferredCommitment).to.be.equal(
+              erc721Commitment.transferCommitment,
+            );
+            expect(res.body.data.transferredCommitmentIndex).to.be.equal(
+              erc721Commitment.transferCommitmentIndex,
+            );
             return done();
           });
       });
@@ -215,11 +219,11 @@ describe('****** Integration Test ******\n', function() {
           .post('/burnNFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            A: erc721Commitment.tokenID,
+            tokenId: erc721Commitment.tokenId,
             uri: erc721Commitment.uri,
-            S_A: erc721Commitment.S_B,
-            z_A: erc721Commitment.transferCommitment,
-            z_A_index: erc721Commitment.transferCommitmentIndex,
+            salt: erc721Commitment.transferredSalt,
+            commitment: erc721Commitment.transferCommitment,
+            commitmentIndex: erc721Commitment.transferCommitmentIndex,
           })
           .set('Accept', 'application/json')
           .set('Authorization', bob.token)
@@ -240,9 +244,9 @@ describe('****** Integration Test ******\n', function() {
           .post('/transferNFToken')
           .use(prefix(apiServerURL))
           .send({
-            tokenID: erc721.tokenID,
+            tokenId: erc721.tokenId,
             uri: erc721.tokenURI,
-            receiver_name: alice.name,
+            receiver: alice.name,
           })
           .set('Accept', 'application/json')
           .set('Authorization', bob.token)
@@ -268,7 +272,7 @@ describe('****** Integration Test ******\n', function() {
           .post('/burnNFToken')
           .use(prefix(apiServerURL))
           .send({
-            tokenID: erc721.tokenID,
+            tokenId: erc721.tokenId,
             uri: erc721.tokenURI,
           })
           .set('Accept', 'application/json')
@@ -565,11 +569,11 @@ describe('****** Integration Test ******\n', function() {
         .set('Authorization', alice.token)
         .end((err, res) => {
           if (err) return done(err);
-          expect(res).to.have.nested.property('body.data.S_A');
+          expect(res).to.have.nested.property('body.data.salt');
           expect(res).to.have.nested.property('body.data.ft_commitment');
           expect(res).to.have.nested.property('body.data.ft_commitment_index');
 
-          erc20CommitmentBatchTransfer.S_A = res.body.data.S_A; // set Salt from response to calculate and verify commitment.
+          erc20CommitmentBatchTransfer.salt = res.body.data.salt; // set Salt from response to calculate and verify commitment.
           expect(res.body.data.ft_commitment).to.be.equal(erc20CommitmentBatchTransfer.commitment);
           expect(res.body.data.ft_commitment_index).to.be.equal(
             erc20CommitmentBatchTransfer.commitmentIndex,
@@ -584,7 +588,7 @@ describe('****** Integration Test ******\n', function() {
     it(`ERC-20 Commitment Batch transfer ERC-20 Commitment to users`, function(done) {
       const {
         mintCommitmentValue: amount,
-        S_A: salt,
+        salt,
         commitment,
         commitmentIndex,
         transferData,

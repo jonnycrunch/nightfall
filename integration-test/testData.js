@@ -26,7 +26,7 @@ export default {
   },
   erc721: {
     tokenURI: 'one',
-    tokenID: generateTokenID(),
+    tokenId: generateTokenID(),
   },
   erc20: {
     mint: 5,
@@ -41,29 +41,29 @@ export default {
   async erc721Commitment() {
     const { alice, bob, erc721 } = this;
 
-    erc721.tokenID = await erc721.tokenID;
+    erc721.tokenId = await erc721.tokenId;
 
     return {
       uri: erc721.tokenURI,
-      tokenID: erc721.tokenID,
+      tokenId: erc721.tokenId,
       mintCommitmentIndex: '0',
       transferCommitmentIndex: '1',
 
       // commitment while mint
       get mintCommitment() {
         return utils.concatenateThenHash(
-          utils.strip0x(this.tokenID).slice(-(LEAF_HASHLENGTH * 2)),
+          utils.strip0x(this.tokenId).slice(-(LEAF_HASHLENGTH * 2)),
           alice.pk,
-          this.S_A, // S_A - set at erc-721 commitment mint (step 4)
+          this.salt, // salt - set at erc-721 commitment mint (step 4)
         );
       },
 
       // commitment while transfer
       get transferCommitment() {
         return utils.concatenateThenHash(
-          utils.strip0x(this.tokenID).slice(-(LEAF_HASHLENGTH * 2)),
+          utils.strip0x(this.tokenId).slice(-(LEAF_HASHLENGTH * 2)),
           bob.pk,
-          this.S_B, // S_B - set at erc-721 commitment transfer to bob (step 5)
+          this.transferredSalt, // S_B - set at erc-721 commitment transfer to bob (step 5)
         );
       },
     };

@@ -20,28 +20,28 @@ router.route('/checkCorrectnessForNFTCommitment').post(checkCorrectnessForNFTCom
  * @apiGroup ERC-721 commitment
  *
  * @apiParam (Request body) {String} uri URI of token.
- * @apiParam (Request body) {String} tokenID unique ERC-721 token Id.
- * @apiParam (Request body) {String} S_A Random generated Salt.
+ * @apiParam (Request body) {String} tokenId unique ERC-721 token Id.
+ * @apiParam (Request body) {String} salt Random generated Salt.
  *
  * @apiExample {js} Example usage:
  * const data = {
- *    S_A: '0xE9A313C89C449AF6E630C25AB3ACC0FC3BAB821638E0D55599B518',
+ *    salt: '0xE9A313C89C449AF6E630C25AB3ACC0FC3BAB821638E0D55599B518',
  *    uri: 'unique token name',
- *    tokenID: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000'
+ *    tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000'
  * }
  *
  * $http.post(url, data)
  *   .success((res, status) => doSomethingHere())
  *   .error((err, status) => doSomethingHere());
  *
- * @apiSuccess (Success 200) {String} z_A Token commitment number.
- * @apiSuccess (Success 200) {Number} z_A_index token index value from blockchain.
+ * @apiSuccess (Success 200) {String} commitment Token commitment number.
+ * @apiSuccess (Success 200) {Number} commitmentIndex token index value from blockchain.
  *
  * @apiSuccessExample {json} Success response:
  *     HTTPS 200 OK
  *	  {
- *		"z_A":"0x5b531cd1a758cf33affd093fcdb3864bfa72f7717f593a8d7d0118",
- *		"z_A_index":"0"
+ *		"commitment":"0x5b531cd1a758cf33affd093fcdb3864bfa72f7717f593a8d7d0118",
+ *		"commitmentIndex":"0"
  *	  }
  */
 router.route('/mintNFTCommitment').post(mintToken);
@@ -52,41 +52,41 @@ router.route('/mintNFTCommitment').post(mintToken);
  * @apiName  Transfer a ERC-721 commitment
  * @apiGroup ERC-721 commitment
  *
- * @apiParam (Request body) {String} A Hex String of token.
+ * @apiParam (Request body) {String} tokenId Hex String of token.
  * @apiParam (Request body) {String} uri URI of token.
- * @apiParam (Request body) {String} S_A Salt of token A.
- * @apiParam (Request body) {String} S_B Random generated Salt.
- * @apiParam (Request body) {String} sk_A Secret key of Transferror (Alice).
- * @apiParam (Request body) {String} pk_B Public key of Receiver (Bob).
- * @apiParam (Request body) {String} z_A Token commitment of token A.
- * @apiParam (Request body) {String} z_A_index Token index of token A.
- * @apiParam (Request body) {String} receiver_name Receiver name.
+ * @apiParam (Request body) {String} salt Salt of token A.
+ * @apiParam (Request body) {String} transferredSalt Random generated Salt.
+ * @apiParam (Request body) {String} senderSecretKey Secret key of Transferror (Alice).
+ * @apiParam (Request body) {String} receiverPublicKey Public key of Receiver (Bob).
+ * @apiParam (Request body) {String} commitment Token commitment of token A.
+ * @apiParam (Request body) {String} commitmentIndex Token index of token A.
+ * @apiParam (Request body) {String} receiver Receiver name.
  *
  * @apiExample {js} Example usage:
  * const data = {
- *    A: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
+ *    tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
  *    uri: 'unique token name',
- *    S_A: '0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518',
- *    S_B: '0xF4C7028D78D140333A36381540E70E6210895A994429FB0483FB91',
- *    sk_A: '0xcf6267b9393a8187ab72bf095e9ffc34af1a5d3d069b9d26e21eac',
- *    z_A: '0xca2c0c099289896be4d72c74f801bed6e4b2cd5297bfcf29325484',
- *    receiver_name: 'bob',
- *    z_A_index: 0,
- *    pk_B: '0xebbabcc471780d9581451e1b2f03bb54638800dd441d1e5c2344f8'
+ *    salt: '0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518',
+ *    transferredSalt: '0xF4C7028D78D140333A36381540E70E6210895A994429FB0483FB91',
+ *    senderSecretKey: '0xcf6267b9393a8187ab72bf095e9ffc34af1a5d3d069b9d26e21eac',
+ *    commitment: '0xca2c0c099289896be4d72c74f801bed6e4b2cd5297bfcf29325484',
+ *    receiver: 'bob',
+ *    commitmentIndex: 0,
+ *    receiverPublicKey: '0xebbabcc471780d9581451e1b2f03bb54638800dd441d1e5c2344f8'
  * }
  *
  * $http.post(url, data)
  *   .success((res, status) => doSomethingHere())
  *   .error((err, status) => doSomethingHere());
  *
- * @apiSuccess (Success 200) {String} z_B Token commitment number.
- * @apiSuccess (Success 200) {Number} z_B_index token index value from blockchain.
+ * @apiSuccess (Success 200) {String} transferredCommitment Token commitment number.
+ * @apiSuccess (Success 200) {Number} transferredCommitmentIndex token index value from blockchain.
  *
  * @apiSuccessExample {json} Success response:
  *     HTTPS 200 OK
  *	  {
- *		"z_B":"0x5b531cd1a758cf33affd093fcdb3864bfa72f7717f593a8d7d0118",
- *		"z_B_index":"1"
+ *		"transferredCommitment":"0x5b531cd1a758cf33affd093fcdb3864bfa72f7717f593a8d7d0118",
+ *		"transferredCommitmentIndex":"1"
  *	  }
  */
 router.route('/transferNFTCommitment').post(transferToken);
@@ -97,21 +97,21 @@ router.route('/transferNFTCommitment').post(transferToken);
  * @apiName  Burn a ERC-721 commitment
  * @apiGroup ERC-721 commitment
  *
- * @apiParam (Request body) {String} A Hex String of token.
+ * @apiParam (Request body) {String} tokenId Hex String of token.
  * @apiParam (Request body) {String} uri URI of token.
- * @apiParam (Request body) {String} S_A Salt of token A.
- * @apiParam (Request body) {String} sk_A Secret key of Transferror (Alice).
- * @apiParam (Request body) {String} z_A Token commitment of token A.
- * @apiParam (Request body) {String} z_A_index Token index of token A.
+ * @apiParam (Request body) {String} salt Salt of token A.
+ * @apiParam (Request body) {String} senderSecretKey Secret key of Transferror (Alice).
+ * @apiParam (Request body) {String} commitment Token commitment of token A.
+ * @apiParam (Request body) {String} commitmentIndex Token index of token A.
  *
  * @apiExample {js} Example usage:
  * const data = {
- *    A: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
+ *    tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
  *    uri: 'unique token name',
- *    S_A: '0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518',
- *    sk_A: '0xcf6267b9393a8187ab72bf095e9ffc34af1a5d3d069b9d26e21eac',
- *    z_A: '0xca2c0c099289896be4d72c74f801bed6e4b2cd5297bfcf29325484',
- *    z_A_index: 0,
+ *    salt: '0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518',
+ *    senderSecretKey: '0xcf6267b9393a8187ab72bf095e9ffc34af1a5d3d069b9d26e21eac',
+ *    commitment: '0xca2c0c099289896be4d72c74f801bed6e4b2cd5297bfcf29325484',
+ *    commitmentIndex: 0,
  * }
  *
  * $http.post(url, data)

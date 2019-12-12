@@ -5,10 +5,10 @@ const router = Router();
 
 async function mint(req, res, next) {
   const { address } = req.headers;
-  const { tokenID, tokenURI } = req.body;
+  const { tokenId, tokenURI } = req.body;
 
   try {
-    await nfController.mintNFToken(tokenID, tokenURI, address);
+    await nfController.mintNFToken(tokenId, tokenURI, address);
     res.data = {
       message: 'NFT Mint Successful',
     };
@@ -20,10 +20,10 @@ async function mint(req, res, next) {
 
 async function transfer(req, res, next) {
   const { address } = req.headers;
-  const { tokenID, to } = req.body;
+  const { tokenId, to } = req.body;
 
   try {
-    await nfController.transferNFToken(tokenID, address, to);
+    await nfController.transferNFToken(tokenId, address, to);
     res.data = {
       message: 'NFT Transfer Successful',
     };
@@ -35,10 +35,10 @@ async function transfer(req, res, next) {
 
 async function burn(req, res, next) {
   const { address } = req.headers;
-  const { tokenID } = req.body;
+  const { tokenId } = req.body;
 
   try {
-    await nfController.burnNFToken(tokenID, address);
+    await nfController.burnNFToken(tokenId, address);
     res.data = {
       message: 'NFT Burn Successful',
     };

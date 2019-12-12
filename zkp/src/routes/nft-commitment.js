@@ -36,9 +36,9 @@ async function mint(req, res, next) {
     );
 
     res.data = {
-      z_A: commitment,
-      z_A_index: commitmentIndex,
-      S_A: salt,
+      commitment,
+      commitmentIndex,
+      salt,
     };
     next();
   } catch (err) {
@@ -85,9 +85,9 @@ async function transfer(req, res, next) {
       },
     );
     res.data = {
-      z_B: outputCommitment,
-      z_B_index: outputCommitmentIndex,
-      S_B: newCommitmentSalt,
+      transferredCommitment: outputCommitment,
+      transferredCommitmentIndex: outputCommitmentIndex,
+      transferredSalt: newCommitmentSalt,
       txReceipt,
     };
     next();
@@ -126,7 +126,7 @@ async function burn(req, res, next) {
       },
     );
     res.data = {
-      z_A: commitment,
+      commitment,
       txReceipt,
     };
     next();

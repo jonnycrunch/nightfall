@@ -71,7 +71,7 @@ export async function mintNFToken(req, res, next) {
     .toString(16)
     .padEnd(64, '0')}`; // create a random number, left-padded to 64 octets
   const reqBody = {
-    tokenID: req.body.tokenID || randomHex,
+    tokenId: req.body.tokenId || randomHex,
     tokenURI: req.body.tokenURI || '',
   };
 
@@ -82,7 +82,7 @@ export async function mintNFToken(req, res, next) {
 
     await db.insertNFToken(req.user, {
       uri: reqBody.tokenURI,
-      tokenId: reqBody.tokenID,
+      tokenId: reqBody.tokenId,
       shieldContractAddress: user.selected_token_shield_contract,
       isMinted: true,
     });
@@ -102,38 +102,38 @@ export async function mintNFToken(req, res, next) {
     password: 'alicesPassword'
   }
  * req.body {
-    tokenID: '0xc3b53ccd640c680000000000000000000000000000000000000000000000000',
+    tokenId: '0xc3b53ccd640c680000000000000000000000000000000000000000000000000',
     uri: 'unique token name',
-    receiver_name: 'bob'.
+    receiver: 'bob'.
     contractAddress: 'Oxad23..' // optional
   }
  * @param {*} req
  * @param {*} res
  */
 export async function transferNFToken(req, res, next) {
-  const { uri, tokenID, contractAddress } = req.body;
+  const { uri, tokenId, contractAddress } = req.body;
 
   try {
-    const receiverAddress = await offchain.getAddressFromName(req.body.receiver_name);
+    const receiverAddress = await offchain.getAddressFromName(req.body.receiver);
     res.data = await zkp.transferNFToken(req.user, {
-      tokenID,
+      tokenId,
       to: receiverAddress,
     });
 
-    await db.updateNFTokenByTokenId(req.user, tokenID, {
+    await db.updateNFTokenByTokenId(req.user, tokenId, {
       uri,
-      tokenId: tokenID,
+      tokenId,
       shieldContractAddress: contractAddress,
-      receiver: req.body.receiver_name,
+      receiver: req.body.receiver,
       receiverAddress,
       isTransferred: true,
     });
 
     await whisperTransaction(req, {
       uri,
-      tokenId: tokenID,
+      tokenId,
       shieldContractAddress: contractAddress,
-      receiver: req.body.receiver_name,
+      receiver: req.body.receiver,
       sender: req.user.name,
       senderAddress: req.user.address,
       for: 'NFTToken',
@@ -154,7 +154,7 @@ export async function transferNFToken(req, res, next) {
     password: 'alicesPassword'
   }
  * req.body {
-    tokenID: '0xc3b53ccd640c680000000000000000000000000000000000000000000000000',
+    tokenId: '0xc3b53ccd640c680000000000000000000000000000000000000000000000000',
     uri: 'unique token name',
     contractAddress: 'Oxad23..' // optional
   }
@@ -162,13 +162,13 @@ export async function transferNFToken(req, res, next) {
  * @param {*} res
  */
 export async function burnNFToken(req, res, next) {
-  const { uri, tokenID, contractAddress } = req.body;
+  const { uri, tokenId, contractAddress } = req.body;
   try {
-    res.data = await zkp.burnNFToken(req.user, { tokenID });
+    res.data = await zkp.burnNFToken(req.user, { tokenId });
 
-    await db.updateNFTokenByTokenId(req.user, tokenID, {
+    await db.updateNFTokenByTokenId(req.user, tokenId, {
       uri,
-      tokenId: tokenID,
+      tokenId,
       shieldContractAddress: contractAddress,
       isBurned: true,
     });

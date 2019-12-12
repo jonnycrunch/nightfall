@@ -337,7 +337,11 @@ async function mint(tokenId, ownerPublicKey, salt, vkId, blockchainOptions, zokr
   const commitmentIndex = newLeafLog[0].args.leafIndex;
   console.groupEnd();
 
-  console.log('Mint output: [z_A, z_A_index]:', commitment, commitmentIndex.toString());
+  console.log(
+    'Mint output: [commitment, commitmentIndex]:',
+    commitment,
+    commitmentIndex.toString(),
+  );
   console.log('MINT COMPLETE\n');
   console.groupEnd();
 

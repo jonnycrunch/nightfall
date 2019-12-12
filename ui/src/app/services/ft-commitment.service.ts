@@ -56,11 +56,11 @@ export default class FtCommitmentService {
   /**
    * Method to initiate a HTTP request to burn ERC-20 token commitments.
    *
-   * @param A {String} Amount to burn
-   * @param S_A {String} Serial number
-   * @param z_A_index {String} Token commitment index
-   * @param z_A {String} Token commitment
-   * @param pk_A {String} Public key of Alice
+   * @param amount {String} Amount to burn
+   * @param salt {String} Serial number
+   * @param commitmentIndex {String} Token commitment index
+   * @param commitment {String} Token commitment
+   * @param ownerPublicKey {String} Public key of Alice
    */
   burnFTCommitment (
     amount: string,
