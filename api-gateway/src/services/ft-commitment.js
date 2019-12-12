@@ -266,6 +266,7 @@ export async function transferFTCommitment(req, res, next) {
       pk: req.body.receiverPublicKey,
       commitment: transferredCommitment,
       commitmentIndex: transferredCommitmentIndex,
+      blockNumber: data.txReceipt.receipt.blockNumber,
       receiver,
       for: 'FTCommitment',
     });
@@ -329,6 +330,7 @@ export async function burnFTCommitment(req, res, next) {
         receiver: payTo,
         sender: req.user.name,
         senderAddress: req.user.address,
+        blockNumber: res.data.txReceipt.receipt.blockNumber,
         for: 'FToken',
       }); // send ft token data to BOB side
     } else {
@@ -413,8 +415,11 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
       selectedCommitmentValue = 0;
     }
 
-    const conmitments = await zkp.simpleFTCommitmentBatchTransfer({ address }, req.body);
-    if (changeIndex) changeData = conmitments.splice(changeIndex, 19);
+    const { commitments, txReceipt } = await zkp.simpleFTCommitmentBatchTransfer(
+      { address },
+      req.body,
+    );
+    if (changeIndex) changeData = commitments.splice(changeIndex, 19);
 
     // update slected coin1 with tansferred data
     await db.updateFTCommitmentByCommitmentHash(req.user, req.body.commitment, {
@@ -422,7 +427,7 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
       salt: req.body.salt,
       commitment: req.body.commitment,
       commitmentIndex: req.body.commitmentIndex,
-      batchTransfer: conmitments,
+      batchTransfer: commitments,
       changeAmount: changeData[0].value,
       changeSalt: changeData[0].salt,
       changeCommitment: changeData[0].commitment,
@@ -441,7 +446,7 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
       });
     }
 
-    for (const data of conmitments) {
+    for (const data of commitments) {
       /* eslint-disable no-continue */
       if (!Number(data.value)) continue;
       await whisperTransaction(req, {
@@ -450,12 +455,13 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
         pk: data.pkB,
         commitment: data.commitment,
         commitmentIndex: data.commitmentIndex,
+        blockNumber: txReceipt.receipt.blockNumber,
         receiver: data.receiverName,
         for: 'FTCommitment',
       });
     }
 
-    res.data = conmitments;
+    res.data = commitments;
     next();
   } catch (err) {
     next(err);

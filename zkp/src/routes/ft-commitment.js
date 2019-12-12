@@ -85,7 +85,7 @@ async function transfer(req, res, next) {
   try {
     const {
       outputCommitments: returnedOutputCommitments,
-      transferReceipt,
+      txReceipt,
     } = await fTokenController.transfer(
       inputCommitments,
       outputCommitments,
@@ -110,7 +110,7 @@ async function transfer(req, res, next) {
       changeCommitmentIndex: returnedOutputCommitments[1].index,
       transferredSalt: returnedOutputCommitments[0].salt,
       changeSalt: returnedOutputCommitments[1].salt,
-      txObj: transferReceipt,
+      txReceipt,
     };
     next();
   } catch (err) {
@@ -128,7 +128,7 @@ async function burn(req, res, next) {
   } = await getTruffleContractInstance('FTokenShield');
 
   try {
-    await fTokenController.burn(
+    const { txReceipt } = await fTokenController.burn(
       amount,
       receiverSecretKey,
       salt,
@@ -150,6 +150,7 @@ async function burn(req, res, next) {
     res.data = {
       commitment,
       commitmentIndex,
+      txReceipt,
     };
     next();
   } catch (err) {
@@ -158,28 +159,21 @@ async function burn(req, res, next) {
 }
 
 async function checkCorrectness(req, res, next) {
-  console.log('\nzkp/src/restapi', '\n/checkCorrectnessForFTCommitment', '\nreq.body', req.body);
+  console.log('\nzkp/src/routes/ft-commitment', '\n/checkCorrectness', '\nreq.body', req.body);
 
   try {
     const { address } = req.headers;
-    const {
-      E: value,
-      pk: publicKey,
-      S_E: salt,
-      z_E: commitment,
-      z_E_index: commitmentIndex,
-    } = req.body;
+    const { amount, salt, pk, commitment, commitmentIndex, blockNumber } = req.body;
 
     const results = await fTokenController.checkCorrectness(
-      value,
-      publicKey,
+      amount,
+      pk,
       salt,
       commitment,
       commitmentIndex,
+      blockNumber,
       address,
     );
-    console.log('\nzkp/src/restapi', '\n/coin/checkCorrectness', '\nresults', results);
-
     res.data = results;
     next();
   } catch (err) {
@@ -195,7 +189,7 @@ async function setFTCommitmentShieldAddress(req, res, next) {
     await fTokenController.setShield(coinShield, address);
     await fTokenController.getBalance(address);
     res.data = {
-      message: 'CoinShield Address Set.',
+      message: 'FTokenShield Address Set.',
     };
     next();
   } catch (err) {
@@ -258,7 +252,7 @@ async function simpleFTCommitmentBatchTransfer(req, res, next) {
   }
 
   try {
-    const { z_E, z_E_index } = await fTokenController.simpleFungibleBatchTransfer(
+    const { z_E, z_E_index, txReceipt } = await fTokenController.simpleFungibleBatchTransfer(
       { value: amount, salt, commitment, index: commitmentIndex },
       transferData,
       receiversPublicKeys,
@@ -277,13 +271,18 @@ async function simpleFTCommitmentBatchTransfer(req, res, next) {
     );
 
     let lastCommitmentIndex = parseInt(z_E_index, 10);
+
     z_E.forEach((transferCommitment, indx) => {
       transferData[indx].commitment = transferCommitment;
       transferData[indx].commitmentIndex = lastCommitmentIndex - (z_E.length - 1);
       lastCommitmentIndex += 1;
     });
+    const commitments = transferData;
 
-    res.data = transferData;
+    res.data = {
+      commitments,
+      txReceipt,
+    };
     next();
   } catch (err) {
     next(err);

@@ -148,3 +148,7 @@ tbody{
 .details-pane{
   background-color: #f9f9fa;
 }
+
+td.active.fas {
+  padding-left: 4px;
+}
