@@ -7,7 +7,7 @@ import { db, offchain, zkp } from '../rest';
  * req.user {
     address: '0x432038accaf756a8936a7f067a8223c2d929d58f',
     name: 'alice',
-    pk_A: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
+    ownerPublicKey: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
     password: 'alicesPassword'
   }
  * req.body {
@@ -33,7 +33,7 @@ export async function insertFTTransactionToDb(req, res, next) {
  * req.user {
     address: '0x432038accaf756a8936a7f067a8223c2d929d58f',
     name: 'alice',
-    pk_A: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
+    ownerPublicKey: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
     password: 'alicesPassword'
   }
  * req.query {
@@ -100,19 +100,19 @@ export async function transferFToken(req, res, next) {
     });
 
     const user = await db.fetchUser(req.user);
-
+    const { amount, receiver } = req.body;
     await db.insertFTTransaction(req.user, {
-      amount: req.body.amount,
+      amount,
       shieldContractAddress: user.selected_coin_shield_contract,
-      receiver: req.body.receiver,
+      receiver,
       receiverAddress,
       isTransferred: true,
     });
 
     await whisperTransaction(req, {
-      amount: req.body.amount,
+      amount,
       shieldContractAddress: user.selected_coin_shield_contract,
-      receiver: req.body.receiver,
+      receiver,
       sender: req.user.name,
       senderAddress: req.user.address,
       for: 'FToken',
@@ -134,15 +134,16 @@ export async function transferFToken(req, res, next) {
  * @param {*} res
 */
 export async function burnFToken(req, res, next) {
+  const { amount } = req.body;
   try {
     await zkp.burnFToken(req.user, {
-      amount: req.body.amount,
+      amount,
     });
 
     const user = await db.fetchUser(req.user);
 
     await db.insertFTTransaction(req.user, {
-      amount: req.body.amount,
+      amount,
       shieldContractAddress: user.selected_coin_shield_contract,
       isBurned: true,
     });

@@ -6,7 +6,7 @@ import { accounts, db, offchain, zkp } from '../rest';
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    pk_A: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.body {
@@ -36,7 +36,7 @@ export async function insertNFTCommitmentToDb(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    pk_A: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.query {
@@ -61,7 +61,7 @@ export async function getNFTCommitments(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    pk_A: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.query {
@@ -95,7 +95,7 @@ export async function checkCorrectnessForNFTCommitment(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    pk_A: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.body {
@@ -112,7 +112,7 @@ export async function mintToken(req, res, next) {
     // mint a private 'token commitment' within the shield contract to represent the public NFToken with the specified tokenId
     const data = await zkp.mintToken(req.user, {
       tokenId,
-      ownerPublicKey: req.user.pk_A,
+      ownerPublicKey: req.user.ownerPublicKey,
     });
 
     // add the new token commitment (and details of its hash preimage) to the token db.
@@ -146,7 +146,7 @@ export async function mintToken(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    pk_A: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
   }
  * req.body {
@@ -232,7 +232,7 @@ export async function transferToken(req, res, next) {
  * req.user {
      address: '0x7d6ca0d3d9246686626dd5b59f5bbd323cbcb15b',
     name: 'bob',
-    pk_A: '0xebbabcc471780d9581451e1b2f03bb54638800dd441d1e5c2344f8',
+    ownerPublicKey: '0xebbabcc471780d9581451e1b2f03bb54638800dd441d1e5c2344f8',
     password: 'bobsPassword'
   }
  * req.body {

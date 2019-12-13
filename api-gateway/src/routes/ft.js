@@ -45,12 +45,12 @@ router.route('/mintFToken').post(mintFToken);
  * @apiGroup ERC-20
  *
  * @apiParam (Request body) {String} amount The amount of ERC-20 token.
- * @apiParam (Request body) {String} receiver_name The name of the Receiver.
+ * @apiParam (Request body) {String} receiver The name of the Receiver.
  *
  * @apiExample {js} Example usage:
  * const data = {
  *   "amount": 20,
- *   "receiver_name": "Bob"
+ *   "receiver": "Bob"
  * }
  *
  * $http.post(url, data)

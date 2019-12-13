@@ -35,8 +35,8 @@ async function mint(req, res, next) {
       },
     );
     res.data = {
-      ft_commitment: commitment,
-      ft_commitment_index: commitmentIndex,
+      commitment,
+      commitmentIndex,
       salt,
     };
     next();

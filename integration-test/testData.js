@@ -134,7 +134,7 @@ export default {
         return utils.concatenateThenHash(
           this.mintCommitmentValue,
           alice.pk,
-          this.S_A === undefined ? '0x0' : this.S_A, // S_A - set at erc-20 commitment mint (step 18)
+          this.salt === undefined ? '0x0' : this.salt, // S_A - set at erc-20 commitment mint (step 18)
         );
       },
       commitmentIndex: 4,

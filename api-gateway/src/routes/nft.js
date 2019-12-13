@@ -47,14 +47,14 @@ router.route('/mintNFToken').post(mintNFToken);
  *
  * @apiParam (Request body) {String} tokenId unique ERC-721 token Id.
  * @apiParam (Request body) {String} tokenURI URI of token.
- * @apiParam (Request body) {String} receiver_name Name of Receiver.
+ * @apiParam (Request body) {String} receiver Name of Receiver.
  * @apiParam (Request body) {String} contractAddress TokenShield Address (optional).
  *
  * @apiExample {js} Example usage:
  * const data = {
  *    tokenId: '0xc3b53ccd640c680000000000000000000000000000000000000000000000000',
  *    uri: 'unique token name',
- *    receiver_name: 'bob'.
+ *    receiver: 'bob'.
  *    contractAddress: 'Oxad23..'
  * }
  *

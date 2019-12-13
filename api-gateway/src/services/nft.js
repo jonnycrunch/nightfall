@@ -7,7 +7,7 @@ import { db, offchain, zkp } from '../rest';
  * req.user {
     address: '0x432038accaf756a8936a7f067a8223c2d929d58f',
     name: 'alice',
-    pk_A: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
+    ownerPublicKey: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
     password: 'alicesPassword'
   }
  * req.body {
@@ -34,7 +34,7 @@ export async function insertNFTToDb(req, res, next) {
  * req.user {
     address: '0x432038accaf756a8936a7f067a8223c2d929d58f',
     name: 'alice',
-    pk_A: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
+    ownerPublicKey: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
     password: 'alicesPassword'
   }
  * req.query {
@@ -57,7 +57,7 @@ export async function getNFTTransactions(req, res, next) {
  * req.user {
     address: '0x432038accaf756a8936a7f067a8223c2d929d58f',
     name: 'alice',
-    pk_A: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
+    ownerPublicKey: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
     password: 'alicesPassword'
   }
  * req.body {
@@ -98,7 +98,7 @@ export async function mintNFToken(req, res, next) {
  * req.user {
     address: '0x432038accaf756a8936a7f067a8223c2d929d58f',
     name: 'alice',
-    pk_A: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
+    ownerPublicKey: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
     password: 'alicesPassword'
   }
  * req.body {
@@ -150,7 +150,7 @@ export async function transferNFToken(req, res, next) {
  * req.user {
     address: '0x432038accaf756a8936a7f067a8223c2d929d58f',
     name: 'alice',
-    pk_A: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
+    ownerPublicKey: '0xd68df96f6cddd786290b57fcead37ea670dfe94634f553afeedfef',
     password: 'alicesPassword'
   }
  * req.body {

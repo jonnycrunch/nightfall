@@ -6,7 +6,7 @@ import { accounts, db, offchain, zkp } from '../rest';
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    pk_A: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.body {
@@ -35,7 +35,7 @@ export async function insertFTCommitmentToDb(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    pk_A: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.query {
@@ -59,7 +59,7 @@ export async function getFTCommitments(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    pk_A: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.query {
@@ -93,7 +93,7 @@ export async function checkCorrectnessForFTCommitment(req, res, next) {
  * req.user {
     address: '0x3bd5ae4b9ae233843d9ccd30b16d3dbc0acc5b7f',
     name: 'alice',
-    pk_A: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
+    ownerPublicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
     password: 'alicesPassword'
   }
  * req.body {
@@ -103,19 +103,22 @@ export async function checkCorrectnessForFTCommitment(req, res, next) {
  * @param {*} res
  */
 export async function mintFTCommitment(req, res, next) {
+  const { amount } = req.body;
   try {
     const data = await zkp.mintFTCommitment(req.user, {
-      amount: req.body.amount,
-      ownerPublicKey: req.user.pk_A,
+      amount,
+      ownerPublicKey: req.user.ownerPublicKey,
     });
 
-    data.ft_commitment_index = parseInt(data.ft_commitment_index, 16);
+    data.commitmentIndex = parseInt(data.commitmentIndex, 16);
+
+    const { salt, commitment, commitmentIndex } = data;
 
     await db.insertFTCommitment(req.user, {
-      amount: req.body.amount,
-      salt: data.salt,
-      commitment: data.ft_commitment,
-      commitmentIndex: data.ft_commitment_index,
+      amount,
+      salt,
+      commitment,
+      commitmentIndex,
       isMinted: true,
     });
 
@@ -131,7 +134,7 @@ export async function mintFTCommitment(req, res, next) {
  * req.user {
     address: '0x3bd5ae4b9ae233843d9ccd30b16d3dbc0acc5b7f',
     name: 'alice',
-    pk_A: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
+    ownerPublicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
     password: 'alicesPassword'
   }
  * req.body {
@@ -258,8 +261,8 @@ export async function transferFTCommitment(req, res, next) {
     }
 
     // note:
-    // E is the value transferred to the receiver
-    // F is the value returned as 'change' to the sender
+    // transferredAmount is the value transferred to the receiver
+    // changeAmount is the value returned as 'change' to the sender
     await whisperTransaction(req, {
       amount: transferredAmount,
       salt: transferredSalt,
@@ -355,7 +358,7 @@ export async function burnFTCommitment(req, res, next) {
  * req.user {
     address: '0x3bd5ae4b9ae233843d9ccd30b16d3dbc0acc5b7f',
     name: 'alice',
-    pk_A: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
+    ownerPublicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
     password: 'alicesPassword'
   }
  * req.body {
@@ -392,7 +395,7 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
     const user = await db.fetchUser(req.user);
     req.body.senderSecretKey = user.secretkey;
 
-    const { transferData } = req.body;
+    const { amount, salt, commitment, commitmentIndex, transferData } = req.body;
     let selectedCommitmentValue = Number(req.body.amount); // amount of selected commitment
 
     for (const data of transferData) {
@@ -409,7 +412,7 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
 
       transferData[i] = {
         value: `0x${selectedCommitmentValue.toString(16).padStart(32, 0)}`,
-        pkB: req.user.pk_A,
+        pkB: req.user.ownerPublicKey,
         receiverName: req.user.name,
       };
       selectedCommitmentValue = 0;
@@ -420,13 +423,12 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
       req.body,
     );
     if (changeIndex) changeData = commitments.splice(changeIndex, 19);
-
     // update slected coin1 with tansferred data
     await db.updateFTCommitmentByCommitmentHash(req.user, req.body.commitment, {
-      amount: req.body.amount,
-      salt: req.body.salt,
-      commitment: req.body.commitment,
-      commitmentIndex: req.body.commitmentIndex,
+      amount,
+      salt,
+      commitment,
+      commitmentIndex,
       batchTransfer: commitments,
       changeAmount: changeData[0].value,
       changeSalt: changeData[0].salt,

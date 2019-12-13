@@ -332,12 +332,12 @@ describe('****** Integration Test ******\n', function() {
           .end((err, res) => {
             if (err) return done(err);
             expect(res).to.have.nested.property('body.data.salt');
-            expect(res).to.have.nested.property('body.data.ft_commitment');
-            expect(res).to.have.nested.property('body.data.ft_commitment_index');
+            expect(res).to.have.nested.property('body.data.commitment');
+            expect(res).to.have.nested.property('body.data.commitmentIndex');
 
             erc20Commitments.mint[0].salt = res.body.data.salt; // set Salt from response to calculate and verify commitment.
-            expect(res.body.data.ft_commitment).to.be.equal(erc20Commitments.mint[0].commitment);
-            expect(res.body.data.ft_commitment_index).to.be.equal(
+            expect(res.body.data.commitment).to.be.equal(erc20Commitments.mint[0].commitment);
+            expect(res.body.data.commitmentIndex).to.be.equal(
               erc20Commitments.mint[0].commitmentIndex,
             );
             return done();
@@ -357,13 +357,13 @@ describe('****** Integration Test ******\n', function() {
           .end((err, res) => {
             if (err) return done(err);
             expect(res).to.have.nested.property('body.data.salt');
-            expect(res).to.have.nested.property('body.data.ft_commitment');
-            expect(res).to.have.nested.property('body.data.ft_commitment_index');
+            expect(res).to.have.nested.property('body.data.commitment');
+            expect(res).to.have.nested.property('body.data.commitmentIndex');
 
             erc20Commitments.mint[1].salt = res.body.data.salt; // set Salt from response to calculate and verify commitment.
 
-            expect(res.body.data.ft_commitment).to.be.equal(erc20Commitments.mint[1].commitment);
-            expect(res.body.data.ft_commitment_index).to.be.equal(
+            expect(res.body.data.commitment).to.be.equal(erc20Commitments.mint[1].commitment);
+            expect(res.body.data.commitmentIndex).to.be.equal(
               erc20Commitments.mint[1].commitmentIndex,
             );
             return done();
@@ -563,19 +563,19 @@ describe('****** Integration Test ******\n', function() {
         .post('/mintFTCommitment')
         .use(prefix(apiServerURL))
         .send({
-          A: erc20CommitmentBatchTransfer.mintCommitmentValue,
+          amount: erc20CommitmentBatchTransfer.mintCommitmentValue,
         })
         .set('Accept', 'application/json')
         .set('Authorization', alice.token)
         .end((err, res) => {
           if (err) return done(err);
           expect(res).to.have.nested.property('body.data.salt');
-          expect(res).to.have.nested.property('body.data.ft_commitment');
-          expect(res).to.have.nested.property('body.data.ft_commitment_index');
+          expect(res).to.have.nested.property('body.data.commitment');
+          expect(res).to.have.nested.property('body.data.commitmentIndex');
 
           erc20CommitmentBatchTransfer.salt = res.body.data.salt; // set Salt from response to calculate and verify commitment.
-          expect(res.body.data.ft_commitment).to.be.equal(erc20CommitmentBatchTransfer.commitment);
-          expect(res.body.data.ft_commitment_index).to.be.equal(
+          expect(res.body.data.commitment).to.be.equal(erc20CommitmentBatchTransfer.commitment);
+          expect(res.body.data.commitmentIndex).to.be.equal(
             erc20CommitmentBatchTransfer.commitmentIndex,
           );
           return done();
