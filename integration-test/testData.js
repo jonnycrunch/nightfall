@@ -13,7 +13,7 @@ export default {
     email: 'alice@ey.com',
     password: 'pass',
     get pk() {
-      return this.sk === undefined ? undefined : utils.hash(this.sk); // sk - set at login test suit (step 2)
+      return this.secretkey === undefined ? undefined : utils.hash(this.secretkey); // secretkey - set at login test suit (step 2)
     },
   },
   bob: {
@@ -21,7 +21,7 @@ export default {
     email: 'bob@ey.com',
     password: 'pass',
     get pk() {
-      return this.sk === undefined ? undefined : utils.hash(this.sk); // sk - set at login test suit (step 2)
+      return this.secretkey === undefined ? undefined : utils.hash(this.secretkey); // secretkey - set at login test suit (step 2)
     },
   },
   erc721: {

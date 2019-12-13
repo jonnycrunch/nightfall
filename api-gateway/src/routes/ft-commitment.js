@@ -51,11 +51,11 @@ router.route('/mintFTCommitment').post(mintFTCommitment);
  * @apiName  Transfer ERC-20 commitment
  * @apiGroup ERC-20 commitment
  *
- * @apiParam (Request body) {String} firstTokenAmount Hex String value of first slected coin.
- * @apiParam (Request body) {String} secondTokenAmount Hex String value of second coin.
+ * @apiParam (Request body) {String} firstSelectedFTCAmount Hex String value of first slected coin.
+ * @apiParam (Request body) {String} secondSelectedFTCAmount Hex String value of second coin.
  * @apiParam (Request body) {String} transferredAmount Hex String value to be transferred.
  * @apiParam (Request body) {String} changeAmount Hex String value of returned Change.
- * @apiParam (Request body) {String} saltOfFirstToken Salt of coin firstTokenAmount.
+ * @apiParam (Request body) {String} saltOfFirstToken Salt of coin firstSelectedFTCAmount.
  * @apiParam (Request body) {String} saltOfSecondToken Salt of coin D.
  * @apiParam (Request body) {String} firstCommitmentIndex coin index value of coin C.
  * @apiParam (Request body) {String} secondCommitmentIndex coin index value of coin D.
@@ -70,8 +70,8 @@ router.route('/mintFTCommitment').post(mintFTCommitment);
  *
  * @apiExample {js} Example usage:
  * const data = {
- *    firstTokenAmount: '0x00000000000000000000000000002710',
- *    secondTokenAmount: '0x00000000000000000000000000001388',
+ *    firstSelectedFTCAmount: '0x00000000000000000000000000002710',
+ *    secondSelectedFTCAmount: '0x00000000000000000000000000001388',
  *    transferredAmount: '0x00000000000000000000000000001770',
  *    changeAmount: '0x00000000000000000000000000002328',
  *    saltOfFirstToken: '0x14de022c9b4a437b346f04646bd7809deb81c38288e9614478351d',

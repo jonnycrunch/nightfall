@@ -92,8 +92,8 @@ export default class FtCommitmentService {
    *
    * Method to initiate a HTTP request to transfer ERC-20 token commitments.
    *
-   * @param firstTokenAmount {String} Amount of selected token1
-   * @param secondTokenAmount {String} Amount of selected token2
+   * @param firstSelectedFTCAmount {String} Amount of selected token1
+   * @param secondSelectedFTCAmount {String} Amount of selected token2
    * @param transferredAmount {String} Amount of token to transfer
    * @param changeAmount {String} Amount of token after transfer
    * @param receiverPublicKey {String} Public key of Bob
@@ -109,8 +109,8 @@ export default class FtCommitmentService {
    * @param receiver {String} Rceiver name
    */
   transferFTCommitment (
-    firstTokenAmount: string,
-    secondTokenAmount: string,
+    firstSelectedFTCAmount: string,
+    secondSelectedFTCAmount: string,
     transferredAmount: string,
     changeAmount: string,
     saltOfFirstToken: string,
@@ -125,13 +125,13 @@ export default class FtCommitmentService {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
     const firstToken = {
-      amount: firstTokenAmount,
+      amount: firstSelectedFTCAmount,
       salt: saltOfFirstToken,
       commitmentIndex: firstCommitmentIndex,
       commitment: commitmentOfFirstToken
     };
     const secondToken = {
-      amount: secondTokenAmount,
+      amount: secondSelectedFTCAmount,
       salt: saltOfSecondToken,
       commitmentIndex: secondCommitmentIndex,
       commitment: commitmentOfSecondToken

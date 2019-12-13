@@ -70,14 +70,14 @@ describe('****** Integration Test ******\n', function() {
         .use(prefix(apiServerURL))
         .set('Authorization', alice.token);
 
-      alice.sk = res.body.data.secretkey;
+      alice.secretkey = res.body.data.secretkey;
 
       res = await request
         .get('/getUserDetails')
         .use(prefix(apiServerURL))
         .set('Authorization', bob.token);
 
-      bob.sk = res.body.data.secretkey;
+      bob.secretkey = res.body.data.secretkey;
     });
 
     /*
