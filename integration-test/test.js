@@ -374,13 +374,13 @@ describe('****** Integration Test ******\n', function() {
        * Transfer ERC-20 Commitment.
        */
       it(`Transfer ${erc20.transfer} ERC-20 Commitment to Bob`, function(done) {
-        const firstToken = {
+        const firstFTCommitment = {
           amount: erc20Commitments.mint[0].amount,
           commitmentIndex: erc20Commitments.mint[0].commitmentIndex,
           commitment: erc20Commitments.mint[0].commitment,
           salt: erc20Commitments.mint[0].salt,
         };
-        const secondToken = {
+        const secondFTCommitment = {
           amount: erc20Commitments.mint[1].amount,
           commitmentIndex: erc20Commitments.mint[1].commitmentIndex,
           commitment: erc20Commitments.mint[1].commitment,
@@ -392,8 +392,8 @@ describe('****** Integration Test ******\n', function() {
           .post('/transferFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            firstToken,
-            secondToken,
+            firstFTCommitment,
+            secondFTCommitment,
             transferredAmount,
             changeAmount,
             receiver: bob.name,

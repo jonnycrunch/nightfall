@@ -114,7 +114,6 @@ router.post('/deleteContractInfo', deleteContractInfo);
  * const query = {
  *    name : "vishnu.ps"
  * }
- *
  * $http.get(url, data)
  *   .success((res, status) => doSomethingHere())
  *   .error((err, status) => doSomethingHere());

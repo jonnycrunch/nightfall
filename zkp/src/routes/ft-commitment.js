@@ -54,7 +54,7 @@ async function transfer(req, res, next) {
     contractInstance: fTokenShield,
   } = await getTruffleContractInstance('FTokenShield');
 
-  let { amount: value, salt, commitmentIndex: index, commitment } = req.body.firstToken;
+  let { amount: value, salt, commitmentIndex: index, commitment } = req.body.firstFTCommitment;
 
   const inputCommitments = [];
   inputCommitments.push({
@@ -64,7 +64,7 @@ async function transfer(req, res, next) {
     index,
   });
 
-  ({ amount: value, salt, commitmentIndex: index, commitment } = req.body.secondToken);
+  ({ amount: value, salt, commitmentIndex: index, commitment } = req.body.secondFTCommitment);
 
   inputCommitments.push({
     value,

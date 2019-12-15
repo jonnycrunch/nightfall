@@ -138,13 +138,13 @@ export async function mintFTCommitment(req, res, next) {
     password: 'alicesPassword'
   }
  * req.body {
-    firstToken: {
+    firstFTCommitment: {
       amount: '0x00000000000000000000000000002710',
       salt: '0x14de022c9b4a437b346f04646bd7809deb81c38288e9614478351d',
       commitmentIndex: 0,
       commitment: '0x39aaa6fe40c2106f49f72c67bc24d377e180baf3fe211c5c90e254'
     },
-    secondToken: {
+    secondFTCommitment: {
       amount: '0x00000000000000000000000000001388',
       salt: '0xdd22d29b452a36d4f9fc3b2ad00e9034cc0a4175b52aa35fb7cd92',
       commitmentIndex: 1,
@@ -176,7 +176,7 @@ export async function transferFTCommitment(req, res, next) {
     data.changeCommitmentIndex = parseInt(data.changeCommitmentIndex, 16);
 
     const { transferredAmount, changeAmount, receiver } = req.body;
-    let { amount, salt, commitmentIndex, commitment } = req.body.firstToken;
+    let { amount, salt, commitmentIndex, commitment } = req.body.firstFTCommitment;
     const {
       transferredCommitment,
       transferredCommitmentIndex,
@@ -204,7 +204,7 @@ export async function transferFTCommitment(req, res, next) {
       isTransferred: true,
     });
 
-    ({ amount, salt, commitmentIndex, commitment } = req.body.secondToken);
+    ({ amount, salt, commitmentIndex, commitment } = req.body.secondFTCommitment);
 
     // update slected coin with tansferred data
     await db.updateFTCommitmentByCommitmentHash(req.user, commitment, {
@@ -239,8 +239,8 @@ export async function transferFTCommitment(req, res, next) {
       isTransferred: true,
       usedFTCommitments: [
         {
-          amount: req.body.firstToken.amount,
-          commitment: req.body.firstToken.commitment,
+          amount: req.body.firstFTCommitment.amount,
+          commitment: req.body.firstFTCommitment.commitment,
         },
         {
           amount,

@@ -124,21 +124,21 @@ export default class FtCommitmentService {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
-    const firstToken = {
+    const firstFTCommitment = {
       amount: firstSelectedFTCAmount,
       salt: saltOfFirstToken,
       commitmentIndex: firstCommitmentIndex,
       commitment: commitmentOfFirstToken
     };
-    const secondToken = {
+    const secondFTCommitment = {
       amount: secondSelectedFTCAmount,
       salt: saltOfSecondToken,
       commitmentIndex: secondCommitmentIndex,
       commitment: commitmentOfSecondToken
     };
     const body = {
-      firstToken,
-      secondToken,
+      firstFTCommitment,
+      secondFTCommitment,
       transferredAmount,
       changeAmount,
       ownerPublicKey,

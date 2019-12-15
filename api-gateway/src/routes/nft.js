@@ -211,7 +211,7 @@ router.post('/insertNFTToDb', insertNFTToDb);
  *        {
  *          "_id":"5d951085f359c40039add23b",
  *          "uri":"one",
- *          "token_id":"0x119eda3adb1dab00000000000000000000000000000000000000000000000000",
+ *          "tokenId":"0x119eda3adb1dab00000000000000000000000000000000000000000000000000",
  *          "type":"minted",
  *          "created_at":"2019-10-02T21:03:01.491Z",
  *          "updated_at":"2019-10-02T21:03:01.491Z",
@@ -247,9 +247,9 @@ router.route('/getNFTTransactions').get(getNFTTransactions);
  *     HTTPS 200 OK
  *	  {
  *		"data":[
- *          {
- *          "address": "0x3915e408fd5cff354fd73549d31a4bc66f7335db59bc4e84001473"
- *          }
+ *        {
+ *         "address": "0x3915e408fd5cff354fd73549d31a4bc66f7335db59bc4e84001473"
+ *        }
  *		]
  *	  }
  */
@@ -274,16 +274,16 @@ router.route('/getNFTokenContractAddress').get(getNFTokenAddress);
  * @apiSuccess (Success 200) {Array} totalCount Total no. of tokens.
  *
  * @apiSuccessExample {json} Success response:
- *     HTTPS 200 OK
- *	  {
+ * HTTPS 200 OK
+ *  {
  *		"data":[
- *          {
- *              balance,
- *              nftName,
- *              nftSymbol,
- *          }
+ *        {
+ *          balance,
+ *          nftName,
+ *          nftSymbol,
+ *        }
  *		]
- *	  }
+ *	}
  */
 router.route('/getNFTokenInfo').get(getNFTokenInfo);
 

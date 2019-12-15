@@ -149,9 +149,8 @@ router.route('/burnNFTCommitment').post(burnToken);
  *    salt: '0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518',
  *    commitment: '0xca2c0c099289896be4d72c74f801bed6e4b2cd5297bfcf29325484',
  *    commitmentIndex: 0,
- *    isMinted: true  
+ *    isMinted: true,
  *    isReceived: true
-
  * }
  *
  * $http.post(url, data)
@@ -197,12 +196,12 @@ router.post('/insertNFTCommitmentToDb', insertNFTCommitmentToDb);
  *      "data":[
  *        {
  *          "_id":"5d957d9ff359c40039add23c",
- *          "token_uri":"one",
- *          "token_id":"0x119eda3adb1dab00000000000000000000000000000000000000000000000000",
+ *          "tokenUri":"one",
+ *          "tokenId":"0x119eda3adb1dab00000000000000000000000000000000000000000000000000",
  *          "salt":"0x207091ec5be2346fad6a402cf41ea24d0959561fa2502a75e93b05",
- *          "token_commitment":"0x6e139af509abe69a2f642e12317bd6fcb049694e5f3859bda03945",
- *          "token_commitment_index":0,
- *          "is_minted":true,
+ *          "commitment":"0x6e139af509abe69a2f642e12317bd6fcb049694e5f3859bda03945",
+ *          "commitmentIndex":0,
+ *          "isMinted":true,
  *          "created_at":"2019-10-03T04:48:31.223Z",
  *          "updated_at":"2019-10-03T04:48:31.223Z",
  *        }
