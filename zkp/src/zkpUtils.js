@@ -8,7 +8,6 @@ Ethereum and Zokrates
 import BI from 'big-integer';
 import hexToBinary from 'hex-to-binary';
 import crypto from 'crypto';
-import createKeccakHash from 'keccak';
 import { Buffer } from 'safe-buffer';
 
 const inputsHashLength = 32;
@@ -360,7 +359,6 @@ not the same value as we'd get using rounds but it's at least doable.
 */
 function sha256Hash(item) {
   const preimage = strip0x(item);
-
   const h = `0x${crypto
     .createHash('sha256')
     .update(preimage, 'hex')
@@ -371,17 +369,6 @@ function sha256Hash(item) {
 
 function hash(item) {
   return sha256Hash(item);
-}
-
-function keccak256Hash(item) {
-  const preimage = strip0x(item);
-
-  const h = createKeccakHash('keccak256')
-    .update(preimage, 'hex')
-    .digest('hex')
-    .slice(-(inputsHashLength * 2))
-    .padStart(inputsHashLength * 2, '0'); // no '0x' applied because incompatible with use
-  return h;
 }
 
 /**
@@ -396,7 +383,7 @@ update: [input string to hash (an array of bytes (in decimal representaion) [byt
 digest: [output format ("hex" in our case)]
 slice: [begin value] outputs the items in the array on and after the 'begin value'
  */
-function concatenateThenHash(...items) {
+function concatenateThenHash(items) {
   const concatvalue = items
     .map(item => Buffer.from(strip0x(item), 'hex'))
     .reduce((acc, item) => concatenate(acc, item));
@@ -499,5 +486,4 @@ export default {
   padHex,
   leftPadHex,
   sha256Hash,
-  keccak256Hash,
 };

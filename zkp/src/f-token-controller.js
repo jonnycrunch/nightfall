@@ -770,7 +770,7 @@ async function simpleFungibleBatchTransfer(
     ...receiversPublicKeys.map(item => new Element(item, 'field')),
     ...outputCommitments.map(item => new Element(item.salt, 'field')),
     ...outputCommitments.map(item => new Element(item.commitment, 'field')),
-    new Element(root, 'field'),
+    new Element(root, 'field', 256, 2), // we want 'all' of the root in one field (it's a MiMC hash) at this point, so we don't have to convert it to a single field in the dsl.
   ]);
 
   console.log(
