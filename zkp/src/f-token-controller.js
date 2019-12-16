@@ -828,8 +828,8 @@ async function simpleFungibleBatchTransfer(
   console.log('TRANSFER COMPLETE\n');
   console.groupEnd();
   return {
-    z_E: outputCommitments.map(item => item.commitment),
-    z_E_index: maxOutputCommitmentIndex,
+    transferredCommitment: outputCommitments.map(item => item.commitment),
+    transferredCommitmentIndex: maxOutputCommitmentIndex,
     txReceipt,
   };
 }

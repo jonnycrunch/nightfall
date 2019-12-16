@@ -174,7 +174,7 @@ export async function transferToken(req, res, next) {
     const user = await db.fetchUser(req.user);
     req.body.senderSecretKey = user.secretkey;
 
-    // Fetch the receiver's pk from the PKD by passing their username
+    // Fetch the receiver's publicKey from the PKD by passing their username
     req.body.receiverPublicKey = await offchain.getZkpPublicKeyFromName(req.body.receiver);
 
     // Transfer the token under zero-knowledge:

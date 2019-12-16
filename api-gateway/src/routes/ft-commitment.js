@@ -92,10 +92,10 @@ router.route('/mintFTCommitment').post(mintFTCommitment);
  *   .success((res, status) => doSomethingHere())
  *   .error((err, status) => doSomethingHere());
  *
- * @apiSuccess (Success 200) {String} z_E Coin commitment number.
- * @apiSuccess (Success 200) {Number} z_E_index coin index value from blockchain.
- * @apiSuccess (Success 200) {String} z_F Coin commitment number.
- * @apiSuccess (Success 200) {Number} z_F_index coin index value from blockchain.
+ * @apiSuccess (Success 200) {String} transferredCommitment Coin commitment number.
+ * @apiSuccess (Success 200) {Number} transferredCommitmentIndex coin index value from blockchain.
+ * @apiSuccess (Success 200) {String} changeCommitment Coin commitment number.
+ * @apiSuccess (Success 200) {Number} changeCommitmentIndex coin index value from blockchain.
  *
  * @apiSuccessExample {json} Success response:
  *     HTTPS 200 OK

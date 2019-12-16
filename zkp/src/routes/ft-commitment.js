@@ -163,11 +163,11 @@ async function checkCorrectness(req, res, next) {
 
   try {
     const { address } = req.headers;
-    const { amount, salt, pk, commitment, commitmentIndex, blockNumber } = req.body;
+    const { amount, salt, publicKey, commitment, commitmentIndex, blockNumber } = req.body;
 
     const results = await fTokenController.checkCorrectness(
       amount,
-      pk,
+      publicKey,
       salt,
       commitment,
       commitmentIndex,
@@ -234,7 +234,7 @@ async function simpleFTCommitmentBatchTransfer(req, res, next) {
     salt,
     commitment,
     commitmentIndex,
-    transferData, // [{value: "0x00000000000000000000000000000002", pkB: "0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8"}]
+    transferData, // [{value: "0x00000000000000000000000000000002", receiverPublicKey: "0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8"}]
     senderSecretKey,
   } = req.body;
   const {
@@ -248,11 +248,15 @@ async function simpleFTCommitmentBatchTransfer(req, res, next) {
   for (const data of transferData) {
     /* eslint-disable no-await-in-loop */
     data.salt = await utils.rndHex(32);
-    receiversPublicKeys.push(data.pkB);
+    receiversPublicKeys.push(data.receiverPublicKey);
   }
 
   try {
-    const { z_E, z_E_index, txReceipt } = await fTokenController.simpleFungibleBatchTransfer(
+    const {
+      transferredCommitment,
+      transferredCommitmentIndex,
+      txReceipt,
+    } = await fTokenController.simpleFungibleBatchTransfer(
       { value: amount, salt, commitment, index: commitmentIndex },
       transferData,
       receiversPublicKeys,
@@ -270,11 +274,11 @@ async function simpleFTCommitmentBatchTransfer(req, res, next) {
       },
     );
 
-    let lastCommitmentIndex = parseInt(z_E_index, 10);
+    let lastCommitmentIndex = parseInt(transferredCommitmentIndex, 10);
 
-    z_E.forEach((transferCommitment, indx) => {
+    transferredCommitment.forEach((transferCommitment, indx) => {
       transferData[indx].commitment = transferCommitment;
-      transferData[indx].commitmentIndex = lastCommitmentIndex - (z_E.length - 1);
+      transferData[indx].commitmentIndex = lastCommitmentIndex - (transferredCommitment.length - 1);
       lastCommitmentIndex += 1;
     });
     const commitments = transferData;

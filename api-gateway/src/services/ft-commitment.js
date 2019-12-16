@@ -166,7 +166,7 @@ export async function transferFTCommitment(req, res, next) {
     await db.updateUserWithPrivateAccount(req.user, { address, password });
     await accounts.unlockAccount({ address, password });
 
-    req.body.receiverPublicKey = await offchain.getZkpPublicKeyFromName(req.body.receiver); // fetch pk from PKD by passing username
+    req.body.receiverPublicKey = await offchain.getZkpPublicKeyFromName(req.body.receiver); // fetch publicKey from PKD by passing username
 
     // get logged in user's secretkey.
     const user = await db.fetchUser(req.user);
@@ -266,7 +266,7 @@ export async function transferFTCommitment(req, res, next) {
     await whisperTransaction(req, {
       amount: transferredAmount,
       salt: transferredSalt,
-      pk: req.body.receiverPublicKey,
+      publicKey: req.body.receiverPublicKey,
       commitment: transferredCommitment,
       commitmentIndex: transferredCommitmentIndex,
       blockNumber: data.txReceipt.receipt.blockNumber,
@@ -400,7 +400,7 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
 
     for (const data of transferData) {
       /* eslint-disable no-await-in-loop */
-      data.pkB = await offchain.getZkpPublicKeyFromName(data.receiverName); // fetch pk from PKD by passing username
+      data.receiverPublicKey = await offchain.getZkpPublicKeyFromName(data.receiverName); // fetch publicKey from PKD by passing username
       selectedCommitmentValue -= Number(data.value);
     }
 
@@ -412,7 +412,7 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
 
       transferData[i] = {
         value: `0x${selectedCommitmentValue.toString(16).padStart(32, 0)}`,
-        pkB: req.user.ownerPublicKey,
+        receiverPublicKey: req.user.ownerPublicKey,
         receiverName: req.user.name,
       };
       selectedCommitmentValue = 0;
@@ -454,7 +454,7 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
       await whisperTransaction(req, {
         amount: data.value,
         salt: data.salt,
-        pk: data.pkB,
+        publicKey: data.receiverPublicKey,
         commitment: data.commitment,
         commitmentIndex: data.commitmentIndex,
         blockNumber: txReceipt.receipt.blockNumber,

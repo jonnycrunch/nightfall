@@ -103,7 +103,7 @@ async function insertFTCommitmentToDb(data, userData) {
     userData,
   );
 
-  const { amount, salt, pk, commitment, commitmentIndex, blockNumber } = data;
+  const { amount, salt, publicKey, commitment, commitmentIndex, blockNumber } = data;
 
   const correctnessChecks = await apiGateway.checkCorrectnessForFTCommitment(
     {
@@ -112,7 +112,7 @@ async function insertFTCommitmentToDb(data, userData) {
     {
       amount,
       salt,
-      pk,
+      publicKey,
       commitment,
       commitmentIndex,
       blockNumber,

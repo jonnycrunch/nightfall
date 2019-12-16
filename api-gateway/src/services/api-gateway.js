@@ -64,7 +64,7 @@ export async function createAccountHandler(req, res, next) {
 
     await offchain.setName(address, name);
     await offchain.setZkpPublicKey(address, {
-      pk: data.publickey,
+      publicKey: data.publickey,
     });
 
     res.data = data;
