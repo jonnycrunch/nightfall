@@ -1,6 +1,7 @@
 import { getTruffleContractInstance } from '../src/contractUtils';
 import bc from '../src/web3';
-import mimc from '../src/mimc-hash';
+
+import mimc from '../../merkle-tree/merkle-tree/src/mimc-hash';
 
 import mimc from '../src/mimc-hash';
 
@@ -24,10 +25,10 @@ describe('MiMC hash tests', () => {
 =======
     const msg = '0xe65b570ac05e96f3d8d205138e9b5ee0371377117020468b0fa81419a0a007ae';
     const testHash = await contractInstance.Hash([msg], { from: accounts[0], gas: 4000000 });
-    const hash = mimc.mimcHash([msg]);
-    console.log('node', hash.toString(10));
-    console.log('blockchain', testHash.toString(10));
-    // expect(hash).toEqual(testHash);
+    const hash = mimc.mimcHash(msg);
+    // console.log('node', hash.toString(10));
+    // console.log('blockchain', testHash.toString(10));
+    expect(hash.toString(10)).toEqual(testHash.toString(10));
   });
 <<<<<<< HEAD
   test('test modMul function', async () => {
