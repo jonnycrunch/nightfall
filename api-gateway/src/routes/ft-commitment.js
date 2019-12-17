@@ -20,7 +20,7 @@ router.route('/checkCorrectnessForFTCommitment').post(checkCorrectnessForFTCommi
  * @apiName  Mint a ERC-20 commitment
  * @apiGroup ERC-20 commitment
  *
- * @apiParam (Request body) {String} amount Hex String of coins.
+ * @apiParam (Request body) {String} amount Hex String representing the 'amount' of a fungible currency to transact.
  * @apiParam (Request body) {String} ownerPublicKey Public key of Minter (Alice).
  * @apiParam (Request body) {String} salt Random generated Salt.
  *
@@ -51,8 +51,8 @@ router.route('/mintFTCommitment').post(mintFTCommitment);
  * @apiName  Transfer ERC-20 commitment
  * @apiGroup ERC-20 commitment
  *
- * @apiParam (Request body) {String} firstSelectedFTCAmount Hex String value of first slected coin.
- * @apiParam (Request body) {String} secondSelectedFTCAmount Hex String value of second coin.
+ * @apiParam (Request body) {String} firstSelectedFTCAmount Hex String representing the firstly selected amount of a fungible currency to transact.
+ * @apiParam (Request body) {String} secondSelectedFTCAmount Hex String representing the selected second amount of a fungible currency to transact.
  * @apiParam (Request body) {String} transferredAmount Hex String value to be transferred.
  * @apiParam (Request body) {String} changeAmount Hex String value of returned Change.
  * @apiParam (Request body) {String} saltOfFirstToken Salt of coin firstSelectedFTCAmount.
@@ -114,7 +114,7 @@ router.route('/transferFTCommitment').post(transferFTCommitment);
  * @apiName  Burn a ERC-20 commitment
  * @apiGroup ERC-20 commitment
  *
- * @apiParam (Request body) {String} amount Hex String of coins.
+ * @apiParam (Request body) {String} amount Hex String representing the 'amount' of a fungible currency to transact.
  * @apiParam (Request body) {String} ownerPublicKey Public key of Burner (Alice).
  * @apiParam (Request body) {String} senderSecretKey Secret key of Burner (Alice).
  * @apiParam (Request body) {String} salt Slat of coin A.
@@ -153,7 +153,7 @@ router.route('/burnFTCommitment').post(burnFTCommitment);
  * @apiName  Insert ERC-20 commitment
  * @apiGroup ERC-20 commitment
  *
- * @apiParam (Request body) {String} amount Hex String.
+ * @apiParam (Request body) {String} amount Hex String representing the 'amount' of a fungible currency to transact.
  * @apiParam (Request body) {String} salt Salt.
  * @apiParam (Request body) {String} commitment Token commitment.
  * @apiParam (Request body) {String} commitmentIndex Token index.

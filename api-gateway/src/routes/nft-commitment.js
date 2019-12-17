@@ -52,14 +52,14 @@ router.route('/mintNFTCommitment').post(mintToken);
  * @apiName  Transfer a ERC-721 commitment
  * @apiGroup ERC-721 commitment
  *
- * @apiParam (Request body) {String} tokenId Hex String of token.
- * @apiParam (Request body) {String} uri URI of token.
- * @apiParam (Request body) {String} salt Salt of token A.
+ * @apiParam (Request body) {String} tokenId Hex String of non fungible token to transfer.
+ * @apiParam (Request body) {String} uri URI of the non fungible token.
+ * @apiParam (Request body) {String} salt Salt of the non fungible token.
  * @apiParam (Request body) {String} transferredSalt Random generated Salt.
  * @apiParam (Request body) {String} senderSecretKey Secret key of Transferror (Alice).
  * @apiParam (Request body) {String} receiverPublicKey Public key of Receiver (Bob).
- * @apiParam (Request body) {String} commitment Token commitment of token A.
- * @apiParam (Request body) {String} commitmentIndex Token index of token A.
+ * @apiParam (Request body) {String} commitment Token commitment of the non fungible token.
+ * @apiParam (Request body) {String} commitmentIndex Token index of the non fungible token.
  * @apiParam (Request body) {String} receiver Receiver name.
  *
  * @apiExample {js} Example usage:
@@ -97,12 +97,12 @@ router.route('/transferNFTCommitment').post(transferToken);
  * @apiName  Burn a ERC-721 commitment
  * @apiGroup ERC-721 commitment
  *
- * @apiParam (Request body) {String} tokenId Hex String of token.
- * @apiParam (Request body) {String} uri URI of token.
- * @apiParam (Request body) {String} salt Salt of token A.
+ * @apiParam (Request body) {String} tokenId Hex String of a non fungible token to burn.
+ * @apiParam (Request body) {String} uri URI of the non fungible token.
+ * @apiParam (Request body) {String} salt Salt of the non fungible token.
  * @apiParam (Request body) {String} senderSecretKey Secret key of Transferror (Alice).
- * @apiParam (Request body) {String} commitment Token commitment of token A.
- * @apiParam (Request body) {String} commitmentIndex Token index of token A.
+ * @apiParam (Request body) {String} commitment Token commitment of the non fungible token.
+ * @apiParam (Request body) {String} commitmentIndex Token index of the non fungible token.
  *
  * @apiExample {js} Example usage:
  * const data = {
@@ -134,11 +134,11 @@ router.route('/burnNFTCommitment').post(burnToken);
  * @apiName  Insert ERC-721 commitment
  * @apiGroup ERC-721 commitment
  *
- * @apiParam (Request body) {String} tokenId Hex String of token.
- * @apiParam (Request body) {String} tokenUri URI of token.
- * @apiParam (Request body) {String} salt Salt of token A.
- * @apiParam (Request body) {String} commitment Token commitment of token A.
- * @apiParam (Request body) {String} commitmentIndex Token index of token A.
+ * @apiParam (Request body) {String} tokenId Hex String of a non fungible token.
+ * @apiParam (Request body) {String} tokenUri URI of the non fungible token.
+ * @apiParam (Request body) {String} salt Salt of the non fungible token.
+ * @apiParam (Request body) {String} commitment Token commitment of the non fungible token.
+ * @apiParam (Request body) {String} commitmentIndex Token index of the non fungible token.
  * @apiParam (Request body) {Boolean} isMinted if data is for minted token.
  * @apiParam (Request body) {Bolean} isReceived if data is transaferred token.
  *
