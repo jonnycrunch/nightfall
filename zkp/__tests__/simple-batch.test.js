@@ -147,8 +147,8 @@ describe('f-token-controller.js tests', () => {
       },
     );
 
-    zInd2 = parseInt(response.z_E_index, 10);
-    commitments = response.z_E;
+    zInd2 = parseInt(response.transferredCommitmentIndex, 10);
+    commitments = response.transferredCommitment;
     const bal2 = await controller.getBalance(accounts[0]);
     const wei = parseInt(bal1, 10) - parseInt(bal2, 10);
     console.log('gas consumed was', wei / 20e9);
