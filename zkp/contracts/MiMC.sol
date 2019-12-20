@@ -10,7 +10,7 @@ pragma solidity ^0.5.0;
 *
 * Round constants are generated in sequence from a seed
 */
-library MiMC
+contract MiMC
 {
     function GetScalarField ()
         internal pure returns (uint256)
@@ -81,9 +81,13 @@ library MiMC
         return MiMCpe7_mp( in_msgs, in_key, uint256(keccak256(abi.encodePacked(seed))), 91 );
     }
 
-    function Hash( uint256[] memory in_msgs )
-        public pure returns (uint256)
+    function mimcHash( bytes32[] memory in_msgs )
+        public pure returns (bytes32)
     {
-        return Hash( in_msgs, 0 );
+        uint256[] memory msgs = new uint256[](in_msgs.length);
+        for ( uint256 i=0; i < in_msgs.length; i++) {
+          msgs[i] = uint256(in_msgs[i]); //convert to uints so we can do arithmetic
+        }
+        return bytes32(Hash( msgs, 0 ));
     }
   }
