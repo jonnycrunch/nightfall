@@ -4,6 +4,9 @@ Implements a mimcHash function, mirroring that written by HarryR in Solidity.
 
 // TODO - move this into zkpUtils?
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> changes to merkle tree code
 import config from 'config';
 import utils from './zkpUtils';
 
@@ -19,6 +22,7 @@ function powerMod(base, exponent, m) {
   while (e > BigInt(0)) {
     if (e % BigInt(2) === BigInt(1)) result = (result * b) % m;
     e >>= BigInt(1);
+<<<<<<< HEAD
 =======
 import config from './config';
 import utils from './zkpUtils';
@@ -48,6 +52,9 @@ function powerMod(base, exponent, m) {
 =======
     b = (b * b) % m;
 >>>>>>> feat(zkp): solidity and node versions of MiMC agree
+=======
+    b = (b * b) % m;
+>>>>>>> changes to merkle tree code
   }
   return result;
 }
@@ -66,6 +73,9 @@ function mimcpe7(x, k, seed, roundCount, m) {
   for (let i = 0; i < roundCount; i++) {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> changes to merkle tree code
     c = utils.keccak256Hash(c);
     t = addMod([xx, BigInt(c), k], m); // t = x + c_i + k
     xx = powerMod(t, BigInt(7), m); // t^7
@@ -79,6 +89,7 @@ function mimcpe7mp(x, k, seed, roundCount, m = BigInt(config.ZOKRATES_PRIME)) {
   let i;
   for (i = 0; i < x.length; i++) {
     r = (r + (x[i] % m) + mimcpe7(x[i], r, seed, roundCount, m)) % m;
+<<<<<<< HEAD
 =======
     c = utils.hash(c); // TODO
     t = addMod([xx, c, k], m); // t = x + c_i + k
@@ -117,21 +128,30 @@ function mimcpe7mp(x, k, seed, roundCount, m = BigInt(config.ZOKRATES_PRIME)) {
 =======
     r = (r + (x[i] % m) + mimcpe7(x[i], r, seed, roundCount, m)) % m;
 >>>>>>> feat(zkp): solidity and node versions of MiMC agree
+=======
+>>>>>>> changes to merkle tree code
   }
   return r;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 function mimcHash(...msgs) {
   // elipses means input stored in array called msgs
   const mimc = '0x6d696d63'; // this is 'mimc' in hex as a nothing-up-my-sleeve seed
   return `0x${mimcpe7mp(
     // '${' notation '0x${x}' -> '0x34' w/ x=34
+=======
+function mimcHash(...msgs) {
+  const mimc = '0x6d696d63'; // this is 'mimc' in hex as a nothing-up-my-sleeve seed
+  return `0x${mimcpe7mp(
+>>>>>>> changes to merkle tree code
     msgs.map(e => {
       const f = BigInt(e);
       if (f > config.ZOKRATES_PRIME) throw new Error('MiMC input exceeded prime field size');
       return f;
     }),
+<<<<<<< HEAD
     BigInt(0), // k
     utils.keccak256Hash(mimc), // seed
     91, // rounds of hashing
@@ -151,6 +171,14 @@ function mimcHash(msgs) {
 =======
   return mimcpe7mp(msgs.map(e => BigInt(e)), BigInt(0), utils.keccak256Hash(mimc), 91); // 91
 >>>>>>> feat(zkp): intermediate save
+=======
+    BigInt(0),
+    utils.keccak256Hash(mimc),
+    91,
+  )
+    .toString(16)
+    .padStart(64, '0')}`;
+>>>>>>> changes to merkle tree code
 }
 
 export default { mimcHash };

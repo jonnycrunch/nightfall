@@ -9,6 +9,7 @@ import BI from 'big-integer';
 import hexToBinary from 'hex-to-binary';
 import crypto from 'crypto';
 import { Buffer } from 'safe-buffer';
+import createKeccakHash from 'keccak';
 
 const inputsHashLength = 32;
 
@@ -494,4 +495,5 @@ export default {
   padHex,
   leftPadHex,
   sha256Hash,
+  keccak256Hash,
 };
