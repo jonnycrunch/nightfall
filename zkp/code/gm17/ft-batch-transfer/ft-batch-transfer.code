@@ -176,7 +176,7 @@ def main(field publicInputHash, private field inputValue, private field[2] secre
 
 	// concatenate siblings and hash all the way up to the root using a MiMC hash
 	field[128] orderBits = unpack128(order) // need to access an array of bits
-  field mimcHash = mimc2([pack128(shaHash[0..128]), pack128(shaHash[128..256])]) //MiMic hash 216 bits of the sha256 for path computation (which uses MiMC)
+  field mimcHash = pack256([0, 0, 0, ...shaHash[0..253]]) //fit the sha256 has into a MiMC hash for path computation by losing the 3 LSBs
 	for field i in 0..32 do
 		field j = 31-i
     field k = 127-i

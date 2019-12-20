@@ -9,6 +9,7 @@ import BI from 'big-integer';
 import hexToBinary from 'hex-to-binary';
 import crypto from 'crypto';
 import { Buffer } from 'safe-buffer';
+import createKeccakHash from 'keccak';
 
 const inputsHashLength = 32;
 
@@ -458,6 +459,14 @@ function padHex(A, l) {
   return ensure0x(strip0x(A).padStart(l / 4, '0'));
 }
 
+function keccak256Hash(item) {
+  const preimage = strip0x(item);
+  const h = `0x${createKeccakHash('keccak256')
+    .update(preimage, 'hex')
+    .digest('hex')}`;
+  return h;
+}
+
 export default {
   isHex,
   utf8StringToHex,
@@ -486,4 +495,5 @@ export default {
   padHex,
   leftPadHex,
   sha256Hash,
+  keccak256Hash,
 };

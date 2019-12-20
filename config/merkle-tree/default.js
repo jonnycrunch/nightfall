@@ -22,6 +22,14 @@ module.exports = {
 
   UPDATE_FREQUENCY: 100, // TODO: recalculate the tree every 'x' leaves - NOT USED YET
   BULK_WRITE_BUFFER_SIZE: 1000, // number of documents to add to a buffer before bulk-writing them to the db
+  allowedHashes: {
+    SHA: 'sha256',
+    MIMC: 'MiMC',
+  },
+  get MERKLE_PATH_HASH() {
+    return this.allowedHashes.MIMC;
+  },
+  ZOKRATES_PRIME: '21888242871839275222246405745257275088548364400416034343698204186575808495617', // decimal representation of the prime p of GaloisField(p)
 
   // contracts to filter:
   contracts: {
