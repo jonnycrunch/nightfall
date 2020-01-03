@@ -329,7 +329,7 @@ export async function burnFTCommitment(req, res, next) {
     if (payTo) {
       await whisperTransaction(req, {
         amount: Number(amount),
-        shieldContractAddress: user.selected_coin_shield_contract,
+        shieldContractAddress: user.selected_ftoken_shield_contract,
         receiver: payTo,
         sender: req.user.name,
         senderAddress: req.user.address,
@@ -339,7 +339,7 @@ export async function burnFTCommitment(req, res, next) {
     } else {
       await db.insertFTTransaction(req.user, {
         amount: Number(amount),
-        shieldContractAddress: user.selected_coin_shield_contract,
+        shieldContractAddress: user.selected_ftoken_shield_contract,
         receiver: payTo,
         sender: req.user.name,
         senderAddress: req.user.address,

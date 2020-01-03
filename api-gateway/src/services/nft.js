@@ -83,7 +83,7 @@ export async function mintNFToken(req, res, next) {
     await db.insertNFToken(req.user, {
       uri: reqBody.tokenURI,
       tokenId: reqBody.tokenId,
-      shieldContractAddress: user.selected_token_shield_contract,
+      shieldContractAddress: user.selected_nftoken_shield_contract,
       isMinted: true,
     });
 
@@ -192,7 +192,7 @@ export async function getNFTokens(req, res, next) {
   try {
     const user = await db.fetchUser(req.user);
     res.data = await db.getNFTokens(req.user, {
-      shieldContractAddress: user.selected_token_shield_contract,
+      shieldContractAddress: user.selected_nftoken_shield_contract,
       limit: req.query.limit,
       pageNo: req.query.pageNo,
     });

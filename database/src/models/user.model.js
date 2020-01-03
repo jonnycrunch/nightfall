@@ -7,9 +7,9 @@ export default new Schema({
   publickey: { type: String, requird: true },
   secretkey: { type: String, requird: true },
   shh_identity: { type: String },
-  selected_coin_shield_contract: { type: String },
-  selected_token_shield_contract: { type: String },
-  coin_shield_contracts: [
+  selected_ftoken_shield_contract: { type: String },
+  selected_nftoken_shield_contract: { type: String },
+  ftokenshield_contracts: [
     {
       contract_name: { type: String },
       contract_address: {
@@ -20,7 +20,7 @@ export default new Schema({
       },
     },
   ],
-  token_shield_contracts: [
+  nftokenshield_contracts: [
     {
       contract_name: { type: String },
       contract_address: {
