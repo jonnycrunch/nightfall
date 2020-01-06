@@ -54,12 +54,14 @@ Start Docker:
 Clone the Nightfall repository:
 
 ```sh
-git clone git@github.com:EYBlockchain/nightfall.git
+git clone --recurse-submodules git@github.com:EYBlockchain/nightfall.git
 ```
 or:
 ```sh
-git clone https://github.com/EYBlockchain/nightfall.git
+git clone --recurse-submodules https://github.com/EYBlockchain/nightfall.git
 ```
+
+_(Notice this repository contains git submodules. See [submodules.md](./submodules.md) for more commands relating to cloning, pulling, pushing, and branching this codebase.)_
 
 Enter the directory:  
 
@@ -106,10 +108,10 @@ You just created all the files needed to generate zk-SNARKs. The proving keys, v
 
 #### Re-installation
 
-If this isn't your first time running Nightfall, but you have just pulled new changes from the repo, then you might need to 're-install' certain features due to code changes. First run:  
+If this isn't your first time running Nightfall, but you have just [pulled](./submodules.md) new changes from the repo, then you might need to 're-install' certain features due to code changes. First run:  
 
 ```sh
-docker-compose -f docker-compose.yml build
+docker-compose -f docker-compose.merkle-tree.yml -f docker-compose.yml build
 ```
 
 It's important to re-run the trusted setup if any of the `.code` files have been modified since your last pull of the repo. You can check with:  
@@ -149,7 +151,7 @@ Note that it can take up to 10 mins to compute a transfer proof (depending on yo
 If you want to close the application, make sure to stop containers and remove containers, networks, volumes, and images created by up, using:
 
 ```sh
-docker-compose down -v
+docker-compose -f docker-compose.merkle-tree.yml -f docker-compose.yml down -v
 ```
 
 ### To run zkp service unit tests
