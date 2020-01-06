@@ -10,7 +10,6 @@ import hexToBinary from 'hex-to-binary';
 import crypto from 'crypto';
 import createKeccakHash from 'keccak';
 import { Buffer } from 'safe-buffer';
-import createKeccakHash from 'keccak';
 
 const inputsHashLength = 32;
 
