@@ -23,12 +23,12 @@ export default class NftService {
     if (isReceived)
       return this.nftTransactionService.insertTransaction({
         ...mappedData,
-        type: 'received',
+        transaction_type: 'transfer_incoming',
       });
 
     return this.nftTransactionService.insertTransaction({
       ...mappedData,
-      type: 'minted',
+      transaction_type: 'mint',
     });
   }
 
@@ -55,17 +55,17 @@ export default class NftService {
     if (isBurned)
       return this.nftTransactionService.insertTransaction({
         ...mappedData,
-        type: 'burned',
+        transaction_type: 'burn',
       });
     if (isShielded)
       return this.nftTransactionService.insertTransaction({
         ...mappedData,
-        type: 'shielded',
+        transaction_type: 'shielding',
       });
 
     return this.nftTransactionService.insertTransaction({
       ...mappedData,
-      type: 'transferred',
+      transaction_type: 'transfer_outgoing',
     });
   }
 

@@ -144,14 +144,14 @@
                     <td>{{ transaction.created_at | date: 'dd/MM/yyyy hh:mm:ss a' }}</td>
                     <td>
                       {{
-                        transaction.type !== 'received' && transaction.receiver
+                        transaction.transaction_type !== 'transfer_incoming' && transaction.receiver
                           ? transaction.receiver
                           : ''
                       }}
                     </td>
                     <td>
                       {{
-                        transaction.type === 'received' && transaction.sender
+                        transaction.transaction_type === 'transfer_incoming' && transaction.sender
                           ? transaction.sender
                           : ''
                       }}

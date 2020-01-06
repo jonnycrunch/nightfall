@@ -1,12 +1,10 @@
 export default function({
-  uri,
+  tokenURI,
   tokenId,
   shieldContractAddress,
 
   receiver,
-  receiverAddress,
   sender,
-  senderAddress,
 
   isMinted,
   isTransferred,
@@ -15,14 +13,12 @@ export default function({
   isShielded,
 }) {
   return {
-    [uri ? 'uri' : undefined]: uri,
+    [tokenURI ? 'token_uri' : undefined]: tokenURI,
     [tokenId ? 'token_id' : undefined]: tokenId,
     [shieldContractAddress ? 'shield_contract_address' : undefined]: shieldContractAddress,
 
     [receiver ? 'receiver' : undefined]: receiver,
-    [receiverAddress ? 'receiver_address' : undefined]: receiverAddress,
     [sender ? 'sender' : undefined]: sender,
-    [senderAddress ? 'sender_address' : undefined]: senderAddress,
 
     [isMinted ? 'is_minted' : undefined]: isMinted,
     [isTransferred ? 'is_transferred' : undefined]: isTransferred,

@@ -15,18 +15,25 @@ export default new Schema(
       type: String,
       required: true,
     },
-    token_commitment: {
+    commitment: {
       type: String,
       unique: true,
       required: true,
     },
-    token_commitment_index: {
+    commitment_index: {
       type: Number,
       required: true,
     },
 
     // receiver info
-    receiver: String,
+    owner: {
+      name: {
+        type: String,
+      },
+      public_key: {
+        type: String,
+      },
+    },
 
     transferred_salt: String,
     transferred_token_commitment: String,

@@ -1,5 +1,5 @@
 export default function({
-  tokenUri,
+  tokenURI,
   tokenId,
   salt,
   shieldContractAddress,
@@ -7,7 +7,7 @@ export default function({
   commitment,
   commitmentIndex,
 
-  receiver,
+  owner,
 
   transferredSalt,
   transferredCommitment,
@@ -22,14 +22,14 @@ export default function({
   zOnchainCorrect,
 }) {
   return {
-    token_uri: tokenUri,
+    token_uri: tokenURI,
     token_id: tokenId,
     [shieldContractAddress ? 'shield_contract_address' : undefined]: shieldContractAddress,
     salt,
-    token_commitment: commitment,
-    token_commitment_index: commitmentIndex,
+    commitment,
+    commitment_index: commitmentIndex,
 
-    [receiver ? 'receiver' : undefined]: receiver,
+    [owner ? 'owner' : undefined]: owner,
     [transferredSalt ? 'transferred_salt' : undefined]: transferredSalt,
     [transferredCommitment ? 'transferred_token_commitment' : undefined]: transferredCommitment,
     [transferredCommitmentIndex

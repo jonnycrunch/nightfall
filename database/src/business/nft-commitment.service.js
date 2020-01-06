@@ -23,12 +23,12 @@ export default class NftCommitmentService {
     if (isReceived)
       return this.nftCommitmentTransactionService.insertTransaction({
         ...mappedData,
-        type: 'received',
+        type: 'transfer_incoming',
       });
 
     return this.nftCommitmentTransactionService.insertTransaction({
       ...mappedData,
-      type: 'minted',
+      type: 'mint',
     });
   }
 
@@ -54,12 +54,12 @@ export default class NftCommitmentService {
     if (isBurned)
       return this.nftCommitmentTransactionService.insertTransaction({
         ...mappedData,
-        type: 'burned',
+        type: 'burn',
       });
 
     return this.nftCommitmentTransactionService.insertTransaction({
       ...mappedData,
-      type: 'transferred',
+      type: 'transfer_outgoing',
     });
   }
 

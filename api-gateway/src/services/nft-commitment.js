@@ -107,7 +107,7 @@ export async function checkCorrectnessForNFTCommitment(req, res, next) {
  * @param {*} res
  */
 export async function mintToken(req, res, next) {
-  const { uri, tokenId, contractAddress } = req.body;
+  const { tokenURI, tokenId, contractAddress } = req.body;
   try {
     // mint a private 'token commitment' within the shield contract to represent the public NFToken with the specified tokenId
     const data = await zkp.mintToken(req.user, {
@@ -118,7 +118,7 @@ export async function mintToken(req, res, next) {
     // add the new token commitment (and details of its hash preimage) to the token db.
     await db.insertNFTCommitment(req.user, {
       tokenId,
-      tokenUri: uri,
+      tokenURI,
       shieldContractAddress: contractAddress,
       salt: data.salt,
       commitment: data.commitment,
@@ -128,7 +128,7 @@ export async function mintToken(req, res, next) {
 
     // update public_token db: set is_shielded to 'true' to indicate that the token is 'in escrow' in the shield contract.
     await db.updateNFTokenByTokenId(req.user, tokenId, {
-      uri,
+      tokenURI,
       tokenId,
       shieldContractAddress: contractAddress,
       isShielded: true,

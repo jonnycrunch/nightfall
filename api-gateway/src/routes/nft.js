@@ -53,8 +53,10 @@ router.route('/mintNFToken').post(mintNFToken);
  * @apiExample {js} Example usage:
  * const data = {
  *    tokenId: '0xc3b53ccd640c680000000000000000000000000000000000000000000000000',
- *    uri: 'unique token name',
- *    receiver: 'bob'.
+ *    tokenURI: 'unique token name',
+ *    receiver: {
+ *      name: 'bob',
+ *    }
  *    contractAddress: 'Oxad23..'
  * }
  *
@@ -85,7 +87,7 @@ router.route('/transferNFToken').post(transferNFToken);
  * @apiExample {js} Example usage:
  * const data = {
  *    tokenId: '0xc3b53ccd640c680000000000000000000000000000000000000000000000000',
- *    uri: 'unique token name',
+ *    tokenURI: 'unique token name',
  *    contractAddress: 'Oxad23..'
  * }
  *
@@ -132,7 +134,7 @@ router.route('/burnNFToken').post(burnNFToken);
  *      {
  *        "is_shielded":false,
  *        "_id":"5ce25daa09416cc13c79b9f0",
- *        "uri":"one",
+ *        "token_uri":"one",
  *        "token_id":"0x57880c3b9cee300000000000000000000000000000000000000000000000000",
  *        "is_minted":true,
  *        "created_at":"2019-05-20T07:56:26.579Z",
@@ -151,7 +153,7 @@ router.get('/getNFTokens', getNFTokens);
  * @apiName  insert non-fungible tokens
  * @apiGroup ERC-721
  *
- * @apiParam (Request body) {String} uri
+ * @apiParam (Request body) {String} tokenURI
  * @apiParam (Request body) {String} tokenId
  * @apiParam (Request body) {String} shieldContractAddress
  * @apiParam (Request body) {String} sender
@@ -160,7 +162,7 @@ router.get('/getNFTokens', getNFTokens);
  *
  * @apiExample {js} Example usage:
  * const body = {
- *    uri: 'unique token URI',
+ *    tokenURI: 'unique token URI',
  *    tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
  *    shieldContractAddress: '0x04b95c76d5075620a655b707a7901462aea8656c',
  *    sender: 'a',
@@ -210,7 +212,7 @@ router.post('/insertNFTToDb', insertNFTToDb);
  *      "data":[
  *        {
  *          "_id":"5d951085f359c40039add23b",
- *          "uri":"one",
+ *          "tokenURI":"one",
  *          "tokenId":"0x119eda3adb1dab00000000000000000000000000000000000000000000000000",
  *          "type":"minted",
  *          "created_at":"2019-10-02T21:03:01.491Z",

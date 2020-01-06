@@ -44,7 +44,7 @@ export default {
     erc721.tokenId = await erc721.tokenId;
 
     return {
-      uri: erc721.tokenURI,
+      tokenURI: erc721.tokenURI,
       tokenId: erc721.tokenId,
       mintCommitmentIndex: '0',
       transferCommitmentIndex: '1',

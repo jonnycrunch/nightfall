@@ -3,13 +3,15 @@ import { NftService } from '../business';
 /**
  * This function will add new ERC 721 token in db.
  * req.body {
- *  uri: 'table/t1',
+ *  tokenURI: 'table/t1',
  *  tokenId: '0xa23..',
  *  shieldContractAddress: '0x12b..',
  *  isMinted: true,
  *  isReceived: true,
- *  sender: 'alice',    [will be only present if is_received = true]
- *  senderAddress: '0x34a'    [will be only present if is_received = true]
+ *  sender: {
+ *    name: 'alice',    [will be only present if is_received = true]
+ *    address: '0x34a'    [will be only present if is_received = true]
+ *  }
  * }
  * 'is_minted' or 'is_received' one at time will be present
  *  depending on new token is minted one or transferred one
@@ -30,11 +32,13 @@ async function insertNFToken(req, res, next) {
 /**
  * This function will update ERC 721 token in db.
  * req.body {
- *  uri: 'table/t1',
+ *  tokenURI: 'table/t1',
  *  tokenId: '0xa23..',
  *  shieldContractAddress: '0x12b..',
- *  receiver: 'bob'   [will be only present if is_transferred = true]
- *  receiverAddress: '0x34a'   [will be only present if is_transferred = true]
+ *  receiver: {
+ *    name: 'bob'   [will be only present if is_transferred = true]
+ *    address: 0x34a'   [will be only present if is_transferred = true]
+ *  }
  *  isTransferred: true,
  *  isBurned: true,
  *  isShielded: true

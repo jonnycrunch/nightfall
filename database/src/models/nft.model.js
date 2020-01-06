@@ -2,7 +2,7 @@ import { Schema } from 'mongoose';
 
 export default new Schema(
   {
-    uri: {
+    token_uri: {
       type: String,
       trim: true,
       required: true,
@@ -25,12 +25,16 @@ export default new Schema(
     is_burned: Boolean,
 
     // receiver info
-    receiver: String,
-    receiver_address: String,
+    receiver: {
+      name: String,
+      address: String,
+    },
 
     // sender info
-    sender: String,
-    sender_address: String,
+    sender: {
+      name: String,
+      address: String,
+    },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );

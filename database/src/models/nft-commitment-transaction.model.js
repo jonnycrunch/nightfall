@@ -2,35 +2,87 @@ import { Schema } from 'mongoose';
 
 export default new Schema(
   {
-    type: {
+    transaction_type: {
       type: String,
-      enum: ['minted', 'transferred', 'received', 'burned'],
+      enum: ['mint', 'transfer_outgoing', 'transfer_incoming', 'burn'],
       required: true,
     },
-    token_uri: {
-      type: String,
-      required: true,
-    },
-    token_id: {
-      type: String,
-      required: true,
-    },
-    salt: {
-      type: String,
-      required: true,
-    },
-    token_commitment: {
-      type: String,
-      index: true,
-      required: true,
-    },
-    token_commitment_index: {
-      type: Number,
-      required: true,
-    },
+    input_commitments: [
+      {
+        token_uri: {
+          type: String,
+          required: true,
+        },
+        token_id: {
+          type: String,
+          required: true,
+        },
+        salt: {
+          type: String,
+          required: true,
+        },
+        commitment: {
+          type: String,
+          index: true,
+          required: true,
+        },
+        commitment_index: {
+          type: Number,
+          required: true,
+        },
+        owner: {
+          name: {
+            type: String,
+          },
+          public_key: {
+            type: String,
+          },
+        },
+      },
+    ],
 
-    // receiver info
-    receiver: String,
+    output_commitments: [
+      {
+        token_uri: {
+          type: String,
+          required: true,
+        },
+        token_id: {
+          type: String,
+          required: true,
+        },
+        salt: {
+          type: String,
+          required: true,
+        },
+        commitment: {
+          type: String,
+          index: true,
+          required: true,
+        },
+        commitment_index: {
+          type: Number,
+          required: true,
+        },
+        owner: {
+          name: {
+            type: String,
+          },
+          public_key: {
+            type: String,
+          },
+        },
+      },
+    ],
+
+    sender: {
+      public_key: {
+        type: String,
+      },
+      name: {
+        type: String,
+      },
+    },
 
     transferred_salt: String,
     transferred_token_commitment: String,

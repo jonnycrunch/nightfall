@@ -70,7 +70,7 @@ export async function mintFToken(req, res, next) {
 
     await db.insertFTTransaction(req.user, {
       amount: req.body.amount,
-      shieldContractAddress: user.selected_coin_shield_contract,
+      shieldContractAddress: user.selected_ftoken_shield_contract,
       isMinted: true,
     });
 
@@ -103,7 +103,7 @@ export async function transferFToken(req, res, next) {
     const { amount, receiver } = req.body;
     await db.insertFTTransaction(req.user, {
       amount,
-      shieldContractAddress: user.selected_coin_shield_contract,
+      shieldContractAddress: user.selected_ftoken_shield_contract,
       receiver,
       receiverAddress,
       isTransferred: true,
@@ -111,7 +111,7 @@ export async function transferFToken(req, res, next) {
 
     await whisperTransaction(req, {
       amount,
-      shieldContractAddress: user.selected_coin_shield_contract,
+      shieldContractAddress: user.selected_ftoken_shield_contract,
       receiver,
       sender: req.user.name,
       senderAddress: req.user.address,
@@ -144,7 +144,7 @@ export async function burnFToken(req, res, next) {
 
     await db.insertFTTransaction(req.user, {
       amount,
-      shieldContractAddress: user.selected_coin_shield_contract,
+      shieldContractAddress: user.selected_ftoken_shield_contract,
       isBurned: true,
     });
 
