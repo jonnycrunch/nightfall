@@ -7,6 +7,7 @@ import "utils/pack/pack128.code" as pack128
 import "hashes/sha256/IVconstants.code" as IVconstants
 import "hashes/sha256/shaRoundNoBoolCheck.code" as sha256
 import "../common/mimc-hash-2.zok" as mimc2
+import "utils/pack/pack256.code" as pack256
 
 // A function that takes 22 field[256] arrays as inputs
 // and applies 11 rounds of sha256 compression.

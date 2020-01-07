@@ -226,7 +226,7 @@ contract MerkleTree {
                     rightInput = nodeValue;
                     // compute the hash of the inputs:
                     // note: we don't extract this hashing into a separate function because that would cost more gas.
-                    assembly {
+                    assembly { // Miranda: replace with mimc function
                         // define pointer
                         let input := mload(0x40) // 0x40 is always the free memory pointer. Don't change this.
                         mstore(input, leftInput) // push first input
