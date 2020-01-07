@@ -22,6 +22,7 @@
   ],
   "license": "CC0-1.0",
   "dependencies": {
+    "@eyblockchain/nightlite": "^1.3.5",
     "@eyblockchain/zokrates.js": "^1.2.0",
     "big-integer": "^1.6.47",
     "body-parser": "^1.19.0",
@@ -31,14 +32,12 @@
     "hex-to-binary": "^1.0.1",
     "inquirer": "^6.2.2",
     "jsonfile": "^5.0.0",
-    "keccak": "^2.1.0",
     "left-pad": "^1.3.0",
     "node-docker-api": "^1.1.22",
     "request": "^2.88.0",
     "safe-buffer": "^5.2.0",
     "truffle-contract": "4.0.15",
     "web3": "1.0.0-beta.36",
-    "websocket": "^1.0.30",
     "yargs": "^12.0.1"
   },
   "devDependencies": {

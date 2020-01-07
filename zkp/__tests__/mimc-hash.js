@@ -17,6 +17,6 @@ describe('MiMC hash tests', () => {
     const hash = mimc.mimcHash([msg]);
     console.log('node', hash.toString(10));
     console.log('blockchain', testHash.toString(10));
-    // expect(hash).toEqual(testHash);
+    expect(hash).toEqual(testHash);
   });
 });
