@@ -25,13 +25,7 @@ const NFTokenShield = contract(jsonfile.readFileSync('./build/contracts/NFTokenS
 
 NFTokenShield.setProvider(Web3.connect());
 
-const Verifier_Registry = contract(
-  jsonfile.readFileSync('./build/contracts/Verifier_Registry.json'),
-);
-
-Verifier_Registry.setProvider(Web3.connect());
-
-const Verifier = contract(jsonfile.readFileSync('./build/contracts/GM17_v0.json'));
+const Verifier = contract(jsonfile.readFileSync('./build/contracts/Verifier.json'));
 Verifier.setProvider(Web3.connect());
 
 const NFTokenMetadata = contract(jsonfile.readFileSync('./build/contracts/NFTokenMetadata.json'));
@@ -200,7 +194,6 @@ function gasUsedStats(txReceipt, functionName) {
  * @param {string} tokenId - the asset token
  * @param {string} ownerPublicKey - Address of the token owner
  * @param {string} salt - Alice's token serial number as a hex string
- * @param {Object} vkId - vkId for NFT's MintNFToken
  * @param {Object} blockchainOptions
  * @param {String} blockchainOptions.nfTokenShieldJson - ABI of nfTokenShield
  * @param {String} blockchainOptions.nfTokenShieldAddress - Address of deployed nfTokenShieldContract
@@ -215,7 +208,7 @@ function gasUsedStats(txReceipt, functionName) {
  * @returns {String} commitment
  * @returns {Number} commitmentIndex - the index of the token within the Merkle Tree.  This is required for later transfers/joins so that Alice knows which 'chunks' of the Merkle Tree she needs to 'get' from the NFTokenShield contract in order to calculate a path.
  */
-async function mint(tokenId, ownerPublicKey, salt, vkId, blockchainOptions, zokratesOptions) {
+async function mint(tokenId, ownerPublicKey, salt, blockchainOptions, zokratesOptions) {
   const { nfTokenShieldJson, nfTokenShieldAddress } = blockchainOptions;
   const account = utils.ensure0x(blockchainOptions.account);
 
@@ -237,10 +230,8 @@ async function mint(tokenId, ownerPublicKey, salt, vkId, blockchainOptions, zokr
 
   console.info('Finding the relevant Shield and Verifier contracts...');
   const verifier = await Verifier.deployed();
-  const verifier_registry = await Verifier_Registry.deployed();
   console.log('NFTokenShield contract address:', nfTokenShieldInstance.address);
   console.log('Verifier contract address:', verifier.address);
-  console.log('Verifier_Registry contract address:', verifier_registry.address);
 
   // Calculate new arguments for the proof:
   const commitment = utils.concatenateThenHash(
@@ -295,10 +286,6 @@ async function mint(tokenId, ownerPublicKey, salt, vkId, blockchainOptions, zokr
   proof = proof.map(el => utils.hexToDec(el));
   console.groupEnd();
 
-  // CHECK!!!!
-  const registry = await verifier.getRegistry();
-  console.log('Check that a registry has actually been registered:', registry);
-
   // Add nfTokenShield as an approver for the token transfer
   const { contractInstance: nfToken } = await getTruffleContractInstance('NFTokenMetadata');
   await nfToken.approve(nfTokenShieldAddress, tokenId, {
@@ -314,21 +301,13 @@ async function mint(tokenId, ownerPublicKey, salt, vkId, blockchainOptions, zokr
   console.log(proof);
   console.log('public inputs:');
   console.log(publicInputs);
-  console.log(`vkId: ${vkId}`);
 
   // Mint the commitment
-  const txReceipt = await nfTokenShieldInstance.mint(
-    proof,
-    publicInputs,
-    vkId,
-    tokenId,
-    commitment,
-    {
-      from: account,
-      gas: 6500000,
-      gasPrice: config.GASPRICE,
-    },
-  );
+  const txReceipt = await nfTokenShieldInstance.mint(proof, publicInputs, tokenId, commitment, {
+    from: account,
+    gas: 6500000,
+    gasPrice: config.GASPRICE,
+  });
   gasUsedStats(txReceipt, 'mint');
 
   const newLeafLog = txReceipt.logs.filter(log => {
@@ -353,7 +332,6 @@ async function mint(tokenId, ownerPublicKey, salt, vkId, blockchainOptions, zokr
  * @param {String} senderSecretKey
  * @param {String} commitment - Commitment of token being sent
  * @param {Integer} commitmentIndex - the position of commitment in the on-chain Merkle Tree
- * @param {String} vkId
  * @param {Object} blockchainOptions
  * @param {String} blockchainOptions.nfTokenShieldJson - ABI of nfTokenShield
  * @param {String} blockchainOptions.nfTokenShieldAddress - Address of deployed nfTokenShieldContract
@@ -370,7 +348,6 @@ async function transfer(
   senderSecretKey,
   commitment,
   commitmentIndex,
-  vkId,
   blockchainOptions,
   zokratesOptions,
 ) {
@@ -394,10 +371,8 @@ async function transfer(
   nfTokenShield.setProvider(Web3.connect());
   const nfTokenShieldInstance = await nfTokenShield.at(nfTokenShieldAddress);
   const verifier = await Verifier.at(await nfTokenShieldInstance.getVerifier.call());
-  const verifier_registry = await Verifier_Registry.at(await verifier.getRegistry.call());
   console.log('NFTokenShield contract address:', nfTokenShieldInstance.address);
   console.log('Verifier contract address:', verifier.address);
-  console.log('Verifier_Registry contract address:', verifier_registry.address);
 
   // Calculate new arguments for the proof:
   const nullifier = utils.concatenateThenHash(originalCommitmentSalt, senderSecretKey);
@@ -510,12 +485,10 @@ async function transfer(
   console.log(proof);
   console.log('publicInputs:');
   console.log(publicInputs);
-  console.log(`vkId: ${vkId}`);
 
   const txReceipt = await nfTokenShieldInstance.transfer(
     proof,
     publicInputs,
-    vkId,
     root,
     nullifier,
     outputCommitment,
@@ -550,7 +523,6 @@ async function transfer(
  * @param {String} salt - salt of token
  * @param {String} commitment
  * @param {String} commitmentIndex
- * @param {String} vkId
  * @param {Object} blockchainOptions
  * @param {String} blockchainOptions.nfTokenShieldJson - ABI of nfTokenShield
  * @param {String} blockchainOptions.nfTokenShieldAddress - Address of deployed nfTokenShieldContract
@@ -562,7 +534,6 @@ async function burn(
   salt,
   commitment,
   commitmentIndex,
-  vkId,
   blockchainOptions,
   zokratesOptions,
 ) {
@@ -596,10 +567,8 @@ async function burn(
 
   console.log('Finding the relevant Shield and Verifier contracts');
   const verifier = await Verifier.deployed();
-  const verifier_registry = await Verifier_Registry.deployed();
   console.log('NFTokenShield contract address:', nfTokenShieldInstance.address);
   console.log('Verifier contract address:', verifier.address);
-  console.log('Verifier_Registry contract address:', verifier_registry.address);
 
   // Calculate new arguments for the proof:
   const nullifier = utils.concatenateThenHash(salt, secretKey);
@@ -680,13 +649,11 @@ async function burn(
   console.log(proof);
   console.log('publicInputs:');
   console.log(publicInputs);
-  console.log(`vkId: ${vkId}`);
 
   // Burns commitment and returns token to payTo
   const txReceipt = await nfTokenShieldInstance.burn(
     proof,
     publicInputs,
-    vkId,
     root,
     nullifier,
     tokenId,

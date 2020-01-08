@@ -4,7 +4,7 @@ import bc from '../src/web3';
 
 import utils from '../src/zkpUtils';
 import controller from '../src/f-token-controller';
-import { getVkId, getTruffleContractInstance } from '../src/contractUtils';
+import { getTruffleContractInstance } from '../src/contractUtils';
 
 jest.setTimeout(7200000);
 
@@ -113,7 +113,6 @@ describe('f-token-controller.js tests', () => {
       C,
       pkA,
       S_A_C,
-      await getVkId('MintFToken'),
       {
         account: accounts[0],
         fTokenShieldJson,
@@ -135,7 +134,6 @@ describe('f-token-controller.js tests', () => {
       D,
       pkA,
       S_A_D,
-      await getVkId('MintFToken'),
       {
         account: accounts[0],
         fTokenShieldJson,
@@ -164,7 +162,6 @@ describe('f-token-controller.js tests', () => {
       outputCommitments,
       pkB,
       skA,
-      await getVkId('TransferFToken'),
       {
         account: accounts[0],
         fTokenShieldJson,
@@ -184,7 +181,6 @@ describe('f-token-controller.js tests', () => {
       G,
       pkB,
       S_B_G,
-      await getVkId('MintFToken'),
       {
         account: accounts[1],
         fTokenShieldJson,
@@ -213,7 +209,6 @@ describe('f-token-controller.js tests', () => {
       outputCommitments,
       pkE,
       skB,
-      await getVkId('TransferFToken'),
       {
         account: accounts[1],
         fTokenShieldJson,
@@ -238,7 +233,6 @@ describe('f-token-controller.js tests', () => {
       sAToAF,
       Z_A_F,
       zInd2 + 2,
-      await getVkId('BurnFToken'),
       {
         account: accounts[0],
         tokenReceiver: accounts[3],

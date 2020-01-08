@@ -43,7 +43,7 @@ app.use('/', nftRoutes);
 app.route('/vk').post(async function runVkController(req, res, next) {
   try {
     await vkController.runController();
-    res.data = { message: 'vk loaded' };
+    res.data = { message: 'verification keys loaded' };
     next();
   } catch (err) {
     next(err);

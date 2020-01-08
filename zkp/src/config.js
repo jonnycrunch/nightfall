@@ -42,18 +42,19 @@ export default {
   // NOTE: 2^253 < ZOKRATES_PRIME < 2^254 - so we must use 253bit numbers to be safe (and lazy) - let's use 248bit numbers (because hex numbers ought to be an even length, and 8 divides 248 (248 is 31 bytes is 62 hex numbers))
   ZOKRATES_PACKING_SIZE: '128', // ZOKRATES_PRIME is approx 253-254bits (just shy of 256), so we pack field elements into blocks of 128 bits.
 
-  NFT_MINT_VK: './code/gm17/nft-mint/nft-mint-vk.json',
-  NFT_TRANSFER_VK: './code/gm17/nft-transfer/nft-transfer-vk.json',
-  NFT_BURN_VK: './code/gm17/nft-burn/nft-burn-vk.json',
-
-  FT_MINT_VK: './code/gm17/ft-mint/ft-mint-vk.json',
-  FT_TRANSFER_VK: './code/gm17/ft-transfer/ft-transfer-vk.json',
-  FT_BURN_VK: './code/gm17/ft-burn/ft-burn-vk.json',
-  FT_SIMPLE_BATCH_TRANSFER_VK: './code/gm17/ft-batch-transfer/ft-batch-transfer-vk.json',
-
-  AGREE_CONTRACT_VK: './code/gm17/agree-contract/agree-contract-vk.json',
-
-  VK_IDS: './src/vkIds.json',
+  VK_PATHS: {
+    NFTokenShield: {
+      mint: './code/gm17/nft-mint/nft-mint-vk.json',
+      transfer: './code/gm17/nft-transfer/nft-transfer-vk.json',
+      burn: './code/gm17/nft-burn/nft-burn-vk.json',
+    },
+    FTokenShield: {
+      mint: './code/gm17/ft-mint/ft-mint-vk.json',
+      transfer: './code/gm17/ft-transfer/ft-transfer-vk.json',
+      simpleBatchTransfer: './code/gm17/ft-batch-transfer/ft-batch-transfer-vk.json',
+      burn: './code/gm17/ft-burn/ft-burn-vk.json',
+    },
+  },
 
   GASPRICE: 20000000000,
 };

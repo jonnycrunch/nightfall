@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import utils from '../zkpUtils';
 import fTokenController from '../f-token-controller';
-import { getVkId, getTruffleContractInstance } from '../contractUtils';
+import { getTruffleContractInstance } from '../contractUtils';
 
 const router = Router();
 
@@ -11,7 +11,6 @@ async function mint(req, res, next) {
   const { address } = req.headers;
   const { amount, ownerPublicKey } = req.body;
   const salt = await utils.rndHex(32);
-  const vkId = await getVkId('MintFToken');
   const {
     contractJson: fTokenShieldJson,
     contractInstance: fTokenShield,
@@ -22,7 +21,6 @@ async function mint(req, res, next) {
       amount,
       ownerPublicKey,
       salt,
-      vkId,
       {
         fTokenShieldJson,
         fTokenShieldAddress: fTokenShield.address,
@@ -61,7 +59,6 @@ async function transfer(req, res, next) {
     z_D,
     z_D_index,
   } = req.body;
-  const vkId = await getVkId('TransferFToken');
   const {
     contractJson: fTokenShieldJson,
     contractInstance: fTokenShield,
@@ -102,7 +99,6 @@ async function transfer(req, res, next) {
       outputCommitments,
       receiverPublicKey,
       senderSecretKey,
-      vkId,
       {
         fTokenShieldJson,
         fTokenShieldAddress: fTokenShield.address,
@@ -132,7 +128,6 @@ async function transfer(req, res, next) {
 async function burn(req, res, next) {
   const { amount, receiverSecretKey, salt, commitment, commitmentIndex, tokenReceiver } = req.body;
   const { address } = req.headers;
-  const vkId = await getVkId('BurnFToken');
   const {
     contractJson: fTokenShieldJson,
     contractInstance: fTokenShield,
@@ -145,7 +140,6 @@ async function burn(req, res, next) {
       salt,
       commitment,
       commitmentIndex,
-      vkId,
       {
         fTokenShieldJson,
         fTokenShieldAddress: fTokenShield.address,
@@ -268,7 +262,6 @@ async function simpleFTCommitmentBatchTransfer(req, res, next) {
       transferData,
       receiversPublicKeys,
       senderSecretKey,
-      await getVkId('SimpleBatchTransferFToken'),
       {
         account: address,
         fTokenShieldJson,

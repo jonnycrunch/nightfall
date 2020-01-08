@@ -24,12 +24,7 @@ import { getTruffleContractInstance } from './contractUtils';
 const FTokenShield = contract(jsonfile.readFileSync('./build/contracts/FTokenShield.json'));
 FTokenShield.setProvider(Web3.connect());
 
-const VerifierRegistry = contract(
-  jsonfile.readFileSync('./build/contracts/Verifier_Registry.json'),
-);
-VerifierRegistry.setProvider(Web3.connect());
-
-const Verifier = contract(jsonfile.readFileSync('./build/contracts/GM17_v0.json'));
+const Verifier = contract(jsonfile.readFileSync('./build/contracts/Verifier.json'));
 Verifier.setProvider(Web3.connect());
 
 const FToken = contract(jsonfile.readFileSync('./build/contracts/FToken.json'));
@@ -178,7 +173,6 @@ function gasUsedStats(txReceipt, functionName) {
  * @param {String} amount - the value of the coin
  * @param {String} ownerPublicKey - Alice's public key
  * @param {String} salt - Alice's token serial number as a hex string
- * @param {String} vkId
  * @param {Object} blockchainOptions
  * @param {String} blockchainOptions.fTokenShieldJson - ABI of fTokenShieldInstance
  * @param {String} blockchainOptions.fTokenShieldAddress - Address of deployed fTokenShieldContract
@@ -186,7 +180,7 @@ function gasUsedStats(txReceipt, functionName) {
  * @returns {String} commitment - Commitment of the minted coins
  * @returns {Number} commitmentIndex
  */
-async function mint(amount, ownerPublicKey, salt, vkId, blockchainOptions, zokratesOptions) {
+async function mint(amount, ownerPublicKey, salt, blockchainOptions, zokratesOptions) {
   const { fTokenShieldJson, fTokenShieldAddress } = blockchainOptions;
   const account = utils.ensure0x(blockchainOptions.account);
 
@@ -208,10 +202,8 @@ async function mint(amount, ownerPublicKey, salt, vkId, blockchainOptions, zokra
 
   console.log('Finding the relevant Shield and Verifier contracts');
   const verifier = await Verifier.deployed();
-  const verifierRegistry = await VerifierRegistry.deployed();
   console.log('FTokenShield contract address:', fTokenShieldInstance.address);
   console.log('Verifier contract address:', verifier.address);
-  console.log('VerifierRegistry contract address:', verifierRegistry.address);
 
   // Calculate new arguments for the proof:
   const commitment = utils.concatenateThenHash(amount, ownerPublicKey, salt);
@@ -292,11 +284,10 @@ async function mint(amount, ownerPublicKey, salt, vkId, blockchainOptions, zokra
   console.log(proof);
   console.log('publicInputs:');
   console.log(publicInputs);
-  console.log(`vkId: ${vkId}`);
 
   // Mint the commitment
   console.log('Approving ERC-20 spend from: ', fTokenShieldInstance.address);
-  const txReceipt = await fTokenShieldInstance.mint(proof, publicInputs, vkId, amount, commitment, {
+  const txReceipt = await fTokenShieldInstance.mint(proof, publicInputs, amount, commitment, {
     from: account,
     gas: 6500000,
     gasPrice: config.GASPRICE,
@@ -336,7 +327,6 @@ async function transfer(
   _outputCommitments,
   receiverPublicKey,
   senderSecretKey,
-  vkId,
   blockchainOptions,
   zokratesOptions,
 ) {
@@ -360,10 +350,8 @@ async function transfer(
   fTokenShield.setProvider(Web3.connect());
   const fTokenShieldInstance = await fTokenShield.at(fTokenShieldAddress);
   const verifier = await Verifier.deployed();
-  const verifierRegistry = await VerifierRegistry.deployed();
   console.log('FTokenShield contract address:', fTokenShieldInstance.address);
   console.log('Verifier contract address:', verifier.address);
-  console.log('VerifierRegistry contract address:', verifierRegistry.address);
 
   const inputCommitments = _inputCommitments;
   const outputCommitments = _outputCommitments;
@@ -613,13 +601,10 @@ async function transfer(
   console.log('publicInputs:');
   console.log(publicInputs);
 
-  console.log(`vkId: ${vkId}`);
-
   // Transfers commitment
   const txReceipt = await fTokenShieldInstance.transfer(
     proof,
     publicInputs,
-    vkId,
     root,
     inputCommitments[0].nullifier,
     inputCommitments[1].nullifier,
@@ -673,7 +658,6 @@ async function simpleFungibleBatchTransfer(
   _outputCommitments,
   receiversPublicKeys,
   senderSecretKey,
-  vkId,
   blockchainOptions,
   zokratesOptions,
 ) {
@@ -697,10 +681,8 @@ async function simpleFungibleBatchTransfer(
   fTokenShield.setProvider(Web3.connect());
   const fTokenShieldInstance = await fTokenShield.at(fTokenShieldAddress);
   const verifier = await Verifier.deployed();
-  const verifierRegistry = await VerifierRegistry.deployed();
   console.log('FTokenShield contract address:', fTokenShieldInstance.address);
   console.log('Verifier contract address:', verifier.address);
-  console.log('VerifierRegistry contract address:', verifierRegistry.address);
 
   const inputCommitment = _inputCommitment;
   const outputCommitments = _outputCommitments;
@@ -805,13 +787,10 @@ async function simpleFungibleBatchTransfer(
   console.log('publicInputs:');
   console.log(publicInputs);
 
-  console.log(`vkId: ${vkId}`);
-
   // send the token to Bob by transforming the commitment
   const txReceipt = await fTokenShieldInstance.simpleBatchTransfer(
     proof,
     publicInputs,
-    vkId,
     root,
     inputCommitment.nullifier,
     outputCommitments.map(item => item.commitment),
@@ -859,7 +838,6 @@ async function burn(
   salt,
   commitment,
   commitmentIndex,
-  vkId,
   blockchainOptions,
   zokratesOptions,
 ) {
@@ -887,10 +865,8 @@ async function burn(
   fTokenShield.setProvider(Web3.connect());
   const fTokenShieldInstance = await fTokenShield.at(fTokenShieldAddress);
   const verifier = await Verifier.deployed();
-  const verifierRegistry = await VerifierRegistry.deployed();
   console.log('FTokenShield contract address:', fTokenShieldInstance.address);
   console.log('Verifier contract address:', verifier.address);
-  console.log('VerifierRegistry contract address:', verifierRegistry.address);
 
   // Calculate new arguments for the proof:
   const nullifier = utils.concatenateThenHash(salt, receiverSecretKey);
@@ -985,13 +961,11 @@ async function burn(
   console.log(proof);
   console.log('publicInputs:');
   console.log(publicInputs);
-  console.log(`vkId: ${vkId}`);
 
   // Burn the commitment and return tokens to the payTo account.
   const txReceipt = await fTokenShieldInstance.burn(
     proof,
     publicInputs,
-    vkId,
     root,
     nullifier,
     amount,

@@ -95,6 +95,5 @@ typings/
 **/gm17/*/**
 !**/*.pcode
 !**/aux-*code
-**/vkIds.json
 **/safe-dump/**
 !**/safe-dump/README.md
