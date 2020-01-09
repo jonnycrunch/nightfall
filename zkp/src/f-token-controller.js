@@ -20,6 +20,7 @@ import formatInputsForZkSnark from './format-inputs';
 import Element from './Element';
 import Web3 from './web3';
 import { getTruffleContractInstance } from './contractUtils';
+import { enc, AUTHORITY_PUBLIC_KEYS } from './el-gamal';
 
 const FTokenShield = contract(jsonfile.readFileSync('./build/contracts/FTokenShield.json'));
 FTokenShield.setProvider(Web3.connect());
@@ -398,6 +399,14 @@ async function transfer(
     outputCommitments[1].salt,
   );
 
+  // compute the encryption of the transfer values
+  const randomSecret = await utils.rndHex(32);
+  const encryption = enc(randomSecret, [
+    outputCommitments[0].value,
+    senderPublicKey,
+    receiverPublicKey,
+  ]);
+
   // Get the sibling-path from the token commitments (leaves) to the root. Express each node as an Element class.
   inputCommitments[0].siblingPath = await merkleTree.getSiblingPath(
     account,
@@ -579,6 +588,9 @@ async function transfer(
     new Element(outputCommitments[1].salt, 'field'),
     new Element(outputCommitments[1].commitment, 'field'),
     new Element(root, 'field'),
+    ...encryption.map(e => new Element(e, 'field', 256, 1)), // 256 bits is bigger than a field but that's ok as the underlying number will fit in a single field,
+    ...AUTHORITY_PUBLIC_KEYS.map(e => new Element(e, 'field', 256, 1)),
+    new Element(randomSecret, 'field', 256, 1),
   ]);
 
   console.log(
