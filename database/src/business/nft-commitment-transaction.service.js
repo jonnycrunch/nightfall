@@ -9,16 +9,29 @@ export default class NftCommitmentTransactionService {
    * This function add record in nft_commitment_transaction tables.
    * @param {Object} data
    * data = {
-   *  type,
-   *  token_uri,
-   *  token_id,
-   *  salt,
-   *  token_commitment,
-   *  token_commitment_index,
-   *  receiver,
-   *  transferred_salt,
-   *  transferred_token_commitment,
-   *  transferred_token_commitment_index,
+   *  transaction_type,
+   *  input_commitments: [{
+   *    token_uri,
+   *    token_id,
+   *    salt,
+   *    commitment,
+   *    commitment_index,
+   *    owner: {
+   *      name,
+   *      public_key,
+   *    },
+   *  }],
+   *  output_commitments: [{
+   *    token_uri,
+   *    token_id,
+   *    salt,
+   *    commitment,
+   *    commitment_index,
+   *    owner: {
+   *      name,
+   *      public_key,
+   *    },
+   *  }],
    * }
    */
   insertTransaction(data) {

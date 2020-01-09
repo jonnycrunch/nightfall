@@ -1,5 +1,5 @@
 import { COLLECTIONS } from '../common/constants';
-import { nftCommitmentMapper } from '../mappers';
+import { nftCommitmentTransferTransactionMapper } from '../mappers';
 import NftCommitmentTransactionService from './nft-commitment-transaction.service';
 
 export default class NftCommitmentService {
@@ -16,19 +16,19 @@ export default class NftCommitmentService {
    */
   async insertNFTCommitment(data) {
     const { isReceived } = data;
-    const mappedData = nftCommitmentMapper(data);
+    const mappedData = nftCommitmentTransferTransactionMapper(data);
 
     await this.db.saveData(COLLECTIONS.NFT_COMMITMENT, mappedData);
 
     if (isReceived)
       return this.nftCommitmentTransactionService.insertTransaction({
         ...mappedData,
-        type: 'transfer_incoming',
+        transaction_type: 'transfer_incoming',
       });
 
     return this.nftCommitmentTransactionService.insertTransaction({
       ...mappedData,
-      type: 'mint',
+      transaction_type: 'mint',
     });
   }
 
@@ -40,7 +40,7 @@ export default class NftCommitmentService {
    */
   async updateNFTCommitmentByTokenId(tokenId, data) {
     const { isBurned } = data;
-    const mappedData = nftCommitmentMapper(data);
+    const mappedData = nftCommitmentTransferTransactionMapper(data);
 
     await this.db.updateData(
       COLLECTIONS.NFT_COMMITMENT,
@@ -54,12 +54,12 @@ export default class NftCommitmentService {
     if (isBurned)
       return this.nftCommitmentTransactionService.insertTransaction({
         ...mappedData,
-        type: 'burn',
+        transaction_type: 'burn',
       });
 
     return this.nftCommitmentTransactionService.insertTransaction({
       ...mappedData,
-      type: 'transfer_outgoing',
+      transaction_type: 'transfer_outgoing',
     });
   }
 

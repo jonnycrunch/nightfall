@@ -220,7 +220,7 @@ describe('****** Integration Test ******\n', function() {
           .use(prefix(apiServerURL))
           .send({
             tokenId: erc721Commitment.tokenId,
-            uri: erc721Commitment.uri,
+            uri: erc721Commitment.tokenURI,
             salt: erc721Commitment.transferredSalt,
             commitment: erc721Commitment.transferCommitment,
             commitmentIndex: erc721Commitment.transferCommitmentIndex,
@@ -245,8 +245,10 @@ describe('****** Integration Test ******\n', function() {
           .use(prefix(apiServerURL))
           .send({
             tokenId: erc721.tokenId,
-            uri: erc721.tokenURI,
-            receiver: alice.name,
+            tokenURI: erc721.tokenURI,
+            receiver: {
+              name: alice.name,
+            },
           })
           .set('Accept', 'application/json')
           .set('Authorization', bob.token)
@@ -273,7 +275,7 @@ describe('****** Integration Test ******\n', function() {
           .use(prefix(apiServerURL))
           .send({
             tokenId: erc721.tokenId,
-            uri: erc721.tokenURI,
+            tokenURI: erc721.tokenURI,
           })
           .set('Accept', 'application/json')
           .set('Authorization', alice.token)

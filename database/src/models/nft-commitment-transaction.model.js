@@ -83,10 +83,6 @@ export default new Schema(
         type: String,
       },
     },
-
-    transferred_salt: String,
-    transferred_token_commitment: String,
-    transferred_token_commitment_index: Number,
   },
   {
     timestamps: {

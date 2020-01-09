@@ -98,9 +98,10 @@ async function getWhisperKeyForAccountByName(req, res, next) {
 
 async function getAllRegisteredAddresses(req, res, next) {
   const { name } = req.query;
-
+  console.log(`>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${name}`);
   try {
     res.data = await getAddressFromName(name);
+    console.log(`>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ${JSON.stringify(res.data)}`);
     next();
   } catch (err) {
     next(err);

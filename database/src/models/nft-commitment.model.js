@@ -35,10 +35,6 @@ export default new Schema(
       },
     },
 
-    transferred_salt: String,
-    transferred_token_commitment: String,
-    transferred_token_commitment_index: Number,
-
     // boolean stats
     is_minted: Boolean,
     is_transferred: Boolean,

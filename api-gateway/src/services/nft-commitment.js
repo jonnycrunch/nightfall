@@ -236,7 +236,7 @@ export async function transferToken(req, res, next) {
     password: 'bobsPassword'
   }
  * req.body {
-     tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
+      tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
       uri: 'unique token name',
       salt: '0xf4c7028d78d140333a36381540e70e6210895a994429fb0483fb91',
       commitment: '0xe0e327cee19c16949a829977a1e3a36b92c2ef22b735b6d7af6c33',
@@ -266,7 +266,7 @@ export async function burnToken(req, res, next) {
 
     await db.updateNFTCommitmentByTokenId(req.user, req.body.tokenId, {
       tokenId: req.body.tokenId,
-      tokenUri: req.body.uri,
+      tokenURI: req.body.uri,
       salt: req.body.salt,
       commitment: req.body.commitment,
       commitmentIndex: req.body.commitmentIndex,
@@ -288,7 +288,7 @@ export async function burnToken(req, res, next) {
       });
     } else {
       await db.insertNFToken(req.user, {
-        uri: req.body.uri,
+        tokenURI: req.body.uri,
         tokenId: req.body.tokenId,
         shieldContractAddress: req.body.contractAddress,
         sender: req.user.name,

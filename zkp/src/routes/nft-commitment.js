@@ -97,6 +97,7 @@ async function transfer(req, res, next) {
 }
 
 async function burn(req, res, next) {
+  console.log(`****************Inside zkp nft-commitment.js ${JSON.stringify(req.body)}`);
   const { tokenId, salt, secretKey, commitment, commitmentIndex, tokenReceiver } = req.body;
   const { address } = req.headers;
   const vkId = await getVkId('BurnNFToken');
