@@ -32,7 +32,7 @@
                 *ngFor="let transaction of transactions; let i = index"
               >
                 <div *ngIf="transaction.token_id" class="token-card">
-                  <p class="list-token header">{{ transaction.uri }}</p>
+                  <p class="list-token header">{{ transaction.token_uri }}</p>
                   <p class="list-token">TokenId : {{ transaction.token_id.slice(0, 8) }}...</p>
                 </div>
               </div>

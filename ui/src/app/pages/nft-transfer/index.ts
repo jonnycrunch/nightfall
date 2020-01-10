@@ -98,7 +98,11 @@ export default class NftTransferComponent implements OnInit, AfterContentInit {
     this.isRequesting = true;
     console.log('selectedToken', this.selectedToken);
     this.selectedToken = this.selectedTokenList[0];
-    this.nftService.transferNFToken(this.selectedToken, this.receiverName).subscribe( data => {
+    const receiver = { 
+      name: this.receiverName
+    };
+    debugger;
+    this.nftService.transferNFToken(this.selectedToken, receiver).subscribe( data => {
         this.isRequesting = false;
         this.toastr.success('Transfer to Receiver ' + this.receiverName);
         this.router.navigate(['/overview'], { queryParams: { selectedTab: 'nft' } });

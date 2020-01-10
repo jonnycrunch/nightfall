@@ -39,13 +39,13 @@ export default class NftService {
    * Method to initiate a HTTP request to transfer ERC-721 token.
    *
    * @param nftToken {Object} Selected ERC-721 token
-   * @param receiver {String} receiver name
+   * @param receiver {Object} receiver 
    */
-  transferNFToken (nftToken: any, receiver: string) {
+  transferNFToken (nftToken: any, receiver: any) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
-    const body = { tokenId: nftToken.token_id, uri: nftToken.uri, receiver, contractAddress: nftToken.shield_contract_address};
+    const body = { tokenId: nftToken.token_id, tokenURI: nftToken.uri, receiver, contractAddress: nftToken.shield_contract_address};
     const url = config.apiGateway.root + 'transferNFToken';
     return this.http
       .post(url, body, httpOptions)

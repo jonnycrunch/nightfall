@@ -116,7 +116,7 @@ export default class NftBurnComponent implements OnInit , AfterContentInit {
       return;
     }
     term = term.toLowerCase();
-    const itemToSearch = item.uri.toString().toLowerCase();
+    const itemToSearch = item.token_uri.toString().toLowerCase();
     return itemToSearch.indexOf(term) > -1;
   }
 

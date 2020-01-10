@@ -136,7 +136,7 @@
                 </thead>
                 <tbody>
                   <tr *ngFor="let transaction of nftTransactions">
-                    <td>{{ transaction.type.toUpperCase() }}</td>
+                    <td>{{ transaction.transaction_type.toUpperCase() }}</td>
                     <td [title]="transaction.token_id">
                       {{ transaction.token_id.slice(0, 20) }}....
                     </td>
@@ -190,7 +190,7 @@
                 </thead>
                 <tbody>
                   <tr *ngFor="let transaction of nftCommitmentTransactions">
-                    <td>{{ transaction.type.toUpperCase() }}</td>
+                    <td>{{ transaction_type.toUpperCase() }}</td>
                     <td [title]="transaction.token_id">
                       {{ transaction.token_id.slice(0, 20) }}....
                     </td>
