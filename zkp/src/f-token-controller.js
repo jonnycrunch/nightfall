@@ -400,7 +400,7 @@ async function transfer(
   );
 
   // compute the encryption of the transfer values
-  const randomSecret = await utils.rndHex(32);
+  const randomSecret = BigInt(await utils.rndHex(32));
   const encryption = enc(randomSecret, [
     outputCommitments[0].value,
     senderPublicKey,
@@ -588,9 +588,9 @@ async function transfer(
     new Element(outputCommitments[1].salt, 'field'),
     new Element(outputCommitments[1].commitment, 'field'),
     new Element(root, 'field'),
-    ...encryption.map(e => new Element(e, 'field', 256, 1)), // 256 bits is bigger than a field but that's ok as the underlying number will fit in a single field,
-    ...AUTHORITY_PUBLIC_KEYS.map(e => new Element(e, 'field', 256, 1)),
-    new Element(randomSecret, 'field', 256, 1),
+    ...encryption.map(e => new Element(e, 'scalar')),
+    ...AUTHORITY_PUBLIC_KEYS.map(e => e.map(f => new Element(f, 'scalar'))), // the double mapping is because each element of the key array is an array (representing an (x,y) curve point)
+    new Element(randomSecret, 'scalar'),
   ]);
 
   console.log(

@@ -5,6 +5,7 @@ import bc from '../src/web3';
 import utils from '../src/zkpUtils';
 import controller from '../src/f-token-controller';
 import { getVkId, getTruffleContractInstance } from '../src/contractUtils';
+import { setAuthorityPrivateKeys } from '../src/el-gamal';
 
 jest.setTimeout(7200000);
 
@@ -42,6 +43,7 @@ let fTokenShieldJson;
 let fTokenShieldAddress;
 
 beforeAll(async () => {
+  setAuthorityPrivateKeys(); // setup test keys
   if (!(await bc.isConnected())) await bc.connect();
   accounts = await (await bc.connection()).eth.getAccounts();
   const { contractJson, contractInstance } = await getTruffleContractInstance('FTokenShield');

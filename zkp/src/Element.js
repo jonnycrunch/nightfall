@@ -8,15 +8,15 @@ We are now potentially using different encoding for each of the elements and for
 @author Westlad, iAmMichaelConnor
 */
 class Element {
-  constructor(_hex, encoding, packingSize, packets) {
-    const hex = _hex.toString(16);
-    const allowedEncoding = ['bits', 'bytes', 'field'];
+  constructor(hex, encoding, packingSize, packets) {
+    // const hex = _hex.toString(16);
+    const allowedEncoding = ['bits', 'bytes', 'field', 'scalar'];
 
     if (!allowedEncoding.includes(encoding))
       throw new Error('Element encoding must be one of:', allowedEncoding);
 
-    if (hex === undefined) throw new Error('Hex string was undefined');
-    if (hex === '') throw new Error('Hex string was empty');
+    if (hex === undefined) throw new Error('input was undefined');
+    if (hex === '') throw new Error('input was empty');
 
     this.hex = utils.ensure0x(hex);
     this.encoding = encoding;

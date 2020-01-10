@@ -33,6 +33,11 @@ export default function formatInputsForZkSnark(elements) {
         );
         break;
 
+      case 'scalar':
+        // this copes with a decimal (BigInt) field element, that needs no conversion
+        a = a.concat(element.hex.toString(10));
+        break;
+
       default:
         throw new Error('Encoding type not recognised');
     }
