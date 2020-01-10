@@ -35,6 +35,9 @@ export default function formatInputsForZkSnark(elements) {
 
       case 'scalar':
         // this copes with a decimal (BigInt) field element, that needs no conversion
+        // eslint-disable-next-line valid-typeof
+        if (typeof element.hex !== 'bigint')
+          throw new Error(`scalar ${element.hex} is not of type BigInt`);
         a = a.concat(element.hex.toString(10));
         break;
 

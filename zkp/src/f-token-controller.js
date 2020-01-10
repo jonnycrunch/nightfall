@@ -400,7 +400,7 @@ async function transfer(
   );
 
   // compute the encryption of the transfer values
-  const randomSecret = BigInt(await utils.rndHex(32));
+  const randomSecret = BigInt(await utils.rndHex(27)); // ideally needs to be smaller than Fq TODO - try 32 bytes when it works
   const encryption = enc(randomSecret, [
     outputCommitments[0].value,
     senderPublicKey,
@@ -567,7 +567,7 @@ async function transfer(
   // compute the proof
   console.log('Computing witness...');
 
-  console.log('AUTHORITY_PUBLIC_KEYS', AUTHORITY_PUBLIC_KEYS);
+  console.log('encryption', encryption);
 
   const allInputs = formatInputsForZkSnark([
     new Element(publicInputHash, 'field', 248, 1),
@@ -590,8 +590,8 @@ async function transfer(
     new Element(outputCommitments[1].salt, 'field'),
     new Element(outputCommitments[1].commitment, 'field'),
     new Element(root, 'field'),
-    ...encryption.map(e => e.map(f => new Element(f, 'scalar'))),
-    ...AUTHORITY_PUBLIC_KEYS.map(e => e.map(f => new Element(f, 'scalar'))), // the double mapping is because each element of the key array is an array (representing an (x,y) curve point)
+    ...encryption.flat().map(f => new Element(f, 'scalar')),
+    ...AUTHORITY_PUBLIC_KEYS.flat().map(f => new Element(f, 'scalar')), // the double mapping is because each element of the key array is an array (representing an (x,y) curve point)
     new Element(randomSecret, 'scalar'),
   ]);
 

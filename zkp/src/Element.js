@@ -17,8 +17,8 @@ class Element {
     if (hex === undefined) throw new Error('input was undefined');
     if (hex === '') throw new Error('input was empty');
     if (encoding === undefined) throw new Error('An encoding must be specified');
-
-    this.hex = utils.ensure0x(hex);
+    // eslint-disable-next-line valid-typeof
+    this.hex = typeof hex === 'bigint' ? hex : utils.ensure0x(hex);
     this.encoding = encoding;
     if (encoding === 'field') {
       this.packingSize = packingSize || config.ZOKRATES_PACKING_SIZE;
