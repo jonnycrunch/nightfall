@@ -9,7 +9,6 @@ We are now potentially using different encoding for each of the elements and for
 */
 class Element {
   constructor(hex, encoding, packingSize, packets) {
-    // const hex = _hex.toString(16);
     const allowedEncoding = ['bits', 'bytes', 'field', 'scalar'];
 
     if (!allowedEncoding.includes(encoding))
@@ -17,6 +16,7 @@ class Element {
 
     if (hex === undefined) throw new Error('input was undefined');
     if (hex === '') throw new Error('input was empty');
+    if (encoding === undefined) throw new Error('An encoding must be specified');
 
     this.hex = utils.ensure0x(hex);
     this.encoding = encoding;

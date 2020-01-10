@@ -567,6 +567,8 @@ async function transfer(
   // compute the proof
   console.log('Computing witness...');
 
+  console.log('AUTHORITY_PUBLIC_KEYS', AUTHORITY_PUBLIC_KEYS);
+
   const allInputs = formatInputsForZkSnark([
     new Element(publicInputHash, 'field', 248, 1),
     new Element(inputCommitments[0].value, 'field', 128, 1),
@@ -588,7 +590,7 @@ async function transfer(
     new Element(outputCommitments[1].salt, 'field'),
     new Element(outputCommitments[1].commitment, 'field'),
     new Element(root, 'field'),
-    ...encryption.map(e => new Element(e, 'scalar')),
+    ...encryption.map(e => e.map(f => new Element(f, 'scalar'))),
     ...AUTHORITY_PUBLIC_KEYS.map(e => e.map(f => new Element(f, 'scalar'))), // the double mapping is because each element of the key array is an array (representing an (x,y) curve point)
     new Element(randomSecret, 'scalar'),
   ]);

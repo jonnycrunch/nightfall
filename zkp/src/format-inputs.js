@@ -39,7 +39,7 @@ export default function formatInputsForZkSnark(elements) {
         break;
 
       default:
-        throw new Error('Encoding type not recognised');
+        throw new Error(`Encoding type ${element.encoding} not recognised`);
     }
   });
   return a;
