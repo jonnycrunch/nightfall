@@ -57,7 +57,6 @@ router.route('/mintNFToken').post(mintNFToken);
  *    receiver: {
  *      name: 'bob',
  *    }
- *    contractAddress: 'Oxad23..'
  * }
  *
  * $http.post(url, data)

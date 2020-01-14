@@ -1,5 +1,5 @@
-import { COLLECTIONS } from '../common/constants';
-import { nftCommitmentTransferTransactionMapper } from '../mappers';
+import {COLLECTIONS} from '../common/constants';
+import {nftCommitmentTransferTransactionMapper} from '../mappers';
 import NftCommitmentTransactionService from './nft-commitment-transaction.service';
 
 export default class NftCommitmentService {
@@ -15,7 +15,7 @@ export default class NftCommitmentService {
    * @param {object} data
    */
   async insertNFTCommitment(data) {
-    const { isReceived } = data;
+    const {isReceived} = data;
     const mappedData = nftCommitmentTransferTransactionMapper(data);
 
     await this.db.saveData(COLLECTIONS.NFT_COMMITMENT, mappedData);
@@ -39,16 +39,16 @@ export default class NftCommitmentService {
    * @param {object} data
    */
   async updateNFTCommitmentByTokenId(tokenId, data) {
-    const { isBurned } = data;
+    const {isBurned} = data;
     const mappedData = nftCommitmentTransferTransactionMapper(data);
 
     await this.db.updateData(
       COLLECTIONS.NFT_COMMITMENT,
       {
         token_id: tokenId,
-        is_transferred: { $exists: false },
+        is_transferred: {$exists: false},
       },
-      { $set: mappedData },
+      {$set: mappedData},
     );
 
     if (isBurned)
@@ -72,19 +72,19 @@ export default class NftCommitmentService {
   getNFTCommitments(pageination) {
     if (!pageination || !pageination.pageNo || !pageination.limit) {
       return this.db.getData(COLLECTIONS.NFT_COMMITMENT, {
-        is_transferred: { $exists: false },
-        is_burned: { $exists: false },
+        is_transferred: {$exists: false},
+        is_burned: {$exists: false},
       });
     }
-    const { pageNo, limit } = pageination;
+    const {pageNo, limit} = pageination;
     return this.db.getDbData(
       COLLECTIONS.NFT_COMMITMENT,
       {
-        is_transferred: { $exists: false },
-        is_burned: { $exists: false },
+        is_transferred: {$exists: false},
+        is_burned: {$exists: false},
       },
       undefined,
-      { created_at: -1 },
+      {created_at: -1},
       parseInt(pageNo, 10),
       parseInt(limit, 10),
     );

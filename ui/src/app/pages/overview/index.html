@@ -140,12 +140,12 @@
                     <td [title]="transaction.token_id">
                       {{ transaction.token_id.slice(0, 20) }}....
                     </td>
-                    <td>{{ transaction.uri }}</td>
+                    <td>{{ transaction.token_uri }}</td>
                     <td>{{ transaction.created_at | date: 'dd/MM/yyyy hh:mm:ss a' }}</td>
                     <td>
                       {{
                         transaction.transaction_type !== 'transfer_incoming' && transaction.receiver
-                          ? transaction.receiver
+                          ? transaction.receiver.name
                           : ''
                       }}
                     </td>

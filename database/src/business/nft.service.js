@@ -1,5 +1,5 @@
-import { COLLECTIONS } from '../common/constants';
-import { nftMapper } from '../mappers';
+import {COLLECTIONS} from '../common/constants';
+import {nftMapper} from '../mappers';
 import NftTransactionService from './nft-transaction.service';
 
 export default class NftService {
@@ -15,7 +15,7 @@ export default class NftService {
    * @param {object} data
    */
   async addNFToken(data) {
-    const { isReceived } = data;
+    const {isReceived} = data;
     const mappedData = nftMapper(data);
 
     await this.db.saveData(COLLECTIONS.NFT, mappedData);
@@ -39,17 +39,17 @@ export default class NftService {
    * @param {object} data
    */
   async updateNFTokenByTokenId(tokenId, data) {
-    const { isBurned, isShielded } = data;
+    const {isBurned, isShielded} = data;
     const mappedData = nftMapper(data);
 
     await this.db.updateData(
       COLLECTIONS.NFT,
       {
         token_id: tokenId,
-        is_transferred: { $exists: false },
+        is_transferred: {$exists: false},
         is_shielded: false,
       },
-      { $set: mappedData },
+      {$set: mappedData},
     );
 
     if (isBurned)
@@ -78,23 +78,21 @@ export default class NftService {
   getNFTokens(query) {
     if (!query || !query.pageNo || !query.limit) {
       return this.db.getData(COLLECTIONS.NFT, {
-        shield_contract_address: query.shieldContractAddress ? query.shieldContractAddress : null,
-        is_transferred: { $exists: false },
-        is_burned: { $exists: false },
+        is_transferred: {$exists: false},
+        is_burned: {$exists: false},
         is_shielded: false,
       });
     }
-    const { pageNo, limit } = query;
+    const {pageNo, limit} = query;
     return this.db.getDbData(
       COLLECTIONS.NFT,
       {
-        shield_contract_address: query.shieldContractAddress ? query.shieldContractAddress : null,
-        is_transferred: { $exists: false },
-        is_burned: { $exists: false },
+        is_transferred: {$exists: false},
+        is_burned: {$exists: false},
         is_shielded: false,
       },
       undefined,
-      { created_at: -1 },
+      {created_at: -1},
       parseInt(pageNo, 10),
       parseInt(limit, 10),
     );
