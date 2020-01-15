@@ -1,5 +1,5 @@
-import { whisperTransaction } from './whisper';
-import { accounts, db, offchain, zkp } from '../rest';
+import {whisperTransaction} from './whisper';
+import {accounts, db, offchain, zkp} from '../rest';
 
 /**
  * This function will insert FT commitment in database
@@ -103,7 +103,7 @@ export async function checkCorrectnessForFTCommitment(req, res, next) {
  * @param {*} res
  */
 export async function mintFTCommitment(req, res, next) {
-  const { amount } = req.body;
+  const {amount} = req.body;
   try {
     const data = await zkp.mintFTCommitment(req.user, {
       amount,
@@ -112,7 +112,7 @@ export async function mintFTCommitment(req, res, next) {
 
     data.commitmentIndex = parseInt(data.commitmentIndex, 16);
 
-    const { salt, commitment, commitmentIndex } = data;
+    const {salt, commitment, commitmentIndex} = data;
 
     await db.insertFTCommitment(req.user, {
       amount,
@@ -163,20 +163,20 @@ export async function transferFTCommitment(req, res, next) {
     // Generate a new one-time-use Ethereum address for the sender to use
     const password = (req.user.address + Date.now()).toString();
     const address = (await accounts.createAccount(password)).data;
-    await db.updateUserWithPrivateAccount(req.user, { address, password });
-    await accounts.unlockAccount({ address, password });
+    await db.updateUserWithPrivateAccount(req.user, {address, password});
+    await accounts.unlockAccount({address, password});
 
     req.body.receiverPublicKey = await offchain.getZkpPublicKeyFromName(req.body.receiver); // fetch publicKey from PKD by passing username
 
     // get logged in user's secretkey.
     const user = await db.fetchUser(req.user);
     req.body.senderSecretKey = user.secretkey;
-    const data = await zkp.transferFTCommitment({ address }, req.body);
+    const data = await zkp.transferFTCommitment({address}, req.body);
     data.transferredCommitmentIndex = parseInt(data.transferredCommitmentIndex, 16);
     data.changeCommitmentIndex = parseInt(data.changeCommitmentIndex, 16);
 
-    const { transferredAmount, changeAmount, receiver } = req.body;
-    let { amount, salt, commitmentIndex, commitment } = req.body.firstFTCommitment;
+    const {transferredAmount, changeAmount, receiver} = req.body;
+    let {amount, salt, commitmentIndex, commitment} = req.body.firstFTCommitment;
     const {
       transferredCommitment,
       transferredCommitmentIndex,
@@ -204,7 +204,7 @@ export async function transferFTCommitment(req, res, next) {
       isTransferred: true,
     });
 
-    ({ amount, salt, commitmentIndex, commitment } = req.body.secondFTCommitment);
+    ({amount, salt, commitmentIndex, commitment} = req.body.secondFTCommitment);
 
     // update slected coin with tansferred data
     await db.updateFTCommitmentByCommitmentHash(req.user, commitment, {
@@ -301,7 +301,7 @@ export async function burnFTCommitment(req, res, next) {
 
     const user = await db.fetchUser(req.user);
     req.body.receiverSecretKey = user.secretkey; // get logged in user's secretkey.
-    const { amount, receiverSecretKey, salt, commitment, commitmentIndex, payTo } = req.body;
+    const {amount, receiverSecretKey, salt, commitment, commitmentIndex, payTo} = req.body;
 
     const burnFTCommitmentBody = {
       amount,
@@ -311,10 +311,7 @@ export async function burnFTCommitment(req, res, next) {
       commitmentIndex,
       receiver: payTo || req.user.name,
     };
-    res.data = await zkp.burnFTCommitment(
-      { ...burnFTCommitmentBody, payTo: payToAddress },
-      req.user,
-    );
+    res.data = await zkp.burnFTCommitment({...burnFTCommitmentBody, payTo: payToAddress}, req.user);
 
     // update slected coin2 with tansferred data
     await db.updateFTCommitmentByCommitmentHash(req.user, req.body.commitment, {
@@ -338,7 +335,7 @@ export async function burnFTCommitment(req, res, next) {
       }); // send ft token data to BOB side
     } else {
       await db.insertFTTransaction(req.user, {
-        value: Number(req.body.A),
+        value: Number(req.body.amount),
         shieldContractAddress: user.selected_coin_shield_contract,
         receiver: {
           name: req.body.payTo || req.user.name,
@@ -390,14 +387,14 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
     // Generate a new one-time-use Ethereum address for the sender to use
     const password = (req.user.address + Date.now()).toString();
     const address = (await accounts.createAccount(password)).data;
-    await db.updateUserWithPrivateAccount(req.user, { address, password });
-    await accounts.unlockAccount({ address, password });
+    await db.updateUserWithPrivateAccount(req.user, {address, password});
+    await accounts.unlockAccount({address, password});
 
     // get logged in user's secretkey.
     const user = await db.fetchUser(req.user);
     req.body.senderSecretKey = user.secretkey;
 
-    const { amount, salt, commitment, commitmentIndex, transferData } = req.body;
+    const {amount, salt, commitment, commitmentIndex, transferData} = req.body;
     let selectedCommitmentValue = Number(req.body.amount); // amount of selected commitment
 
     for (const data of transferData) {
@@ -420,10 +417,7 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
       selectedCommitmentValue = 0;
     }
 
-    const { commitments, txReceipt } = await zkp.simpleFTCommitmentBatchTransfer(
-      { address },
-      req.body,
-    );
+    const {commitments, txReceipt} = await zkp.simpleFTCommitmentBatchTransfer({address}, req.body);
     if (changeIndex) changeData = commitments.splice(changeIndex, 19);
     // update slected coin1 with tansferred data
     await db.updateFTCommitmentByCommitmentHash(req.user, req.body.commitment, {

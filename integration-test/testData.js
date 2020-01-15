@@ -134,7 +134,7 @@ export default {
         return utils.concatenateThenHash(
           this.mintCommitmentValue,
           alice.pk,
-          this.salt === undefined ? '0x0' : this.salt, // S_A - set at erc-20 commitment mint (step 18)
+          this.salt === undefined ? '0x0' : this.salt, // salt - set at erc-20 commitment mint (step 18)
         );
       },
       commitmentIndex: 4,
@@ -147,7 +147,7 @@ export default {
             return utils.concatenateThenHash(
               this.value,
               bob.pk,
-              this.salt === undefined ? '0x0' : this.salt, // S_A - set at erc-20 commitment mint (step 18)
+              this.salt === undefined ? '0x0' : this.salt, // salt - set at erc-20 commitment mint (step 18)
             );
           },
         },
@@ -159,7 +159,7 @@ export default {
             return utils.concatenateThenHash(
               this.value,
               alice.pk,
-              this.salt === undefined ? '0x0' : this.salt, // S_A - set at erc-20 commitment mint (step 18)
+              this.salt === undefined ? '0x0' : this.salt, // salt - set at erc-20 commitment mint (step 18)
             );
           },
         },

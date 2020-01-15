@@ -438,7 +438,7 @@ describe('****** Integration Test ******\n', function() {
           .post('/burnFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            value: erc20Commitments.change.value,
+            amount: erc20Commitments.change.value,
             salt: erc20Commitments.change.changeSalt,
             commitmentIndex: erc20Commitments.change.commitmentIndex,
             commitment: erc20Commitments.change.commitment,
@@ -469,7 +469,7 @@ describe('****** Integration Test ******\n', function() {
           .post('/burnFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            value: erc20Commitments.transfer.value,
+            amount: erc20Commitments.transfer.value,
             salt: erc20Commitments.transfer.transferredSalt,
             commitmentIndex: erc20Commitments.transfer.commitmentIndex,
             commitment: erc20Commitments.transfer.commitment,
@@ -567,7 +567,7 @@ describe('****** Integration Test ******\n', function() {
         .post('/mintFTCommitment')
         .use(prefix(apiServerURL))
         .send({
-          value: erc20CommitmentBatchTransfer.mintCommitmentValue,
+          amount: erc20CommitmentBatchTransfer.mintCommitmentValue,
         })
         .set('Accept', 'application/json')
         .set('Authorization', alice.token)
@@ -591,7 +591,7 @@ describe('****** Integration Test ******\n', function() {
      */
     it(`ERC-20 Commitment Batch transfer ERC-20 Commitment to users`, function(done) {
       const {
-        mintCommitmentValue: value,
+        mintCommitmentValue: amount,
         salt,
         commitment,
         commitmentIndex,
@@ -601,7 +601,7 @@ describe('****** Integration Test ******\n', function() {
         .post('/simpleFTCommitmentBatchTransfer')
         .use(prefix(apiServerURL))
         .send({
-          value,
+          amount,
           salt,
           commitment,
           commitmentIndex,

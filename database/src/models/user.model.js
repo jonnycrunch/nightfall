@@ -1,17 +1,17 @@
-import { Schema } from 'mongoose';
+import {Schema} from 'mongoose';
 
 export default new Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true },
-  address: { type: String, requird: true },
-  publickey: { type: String, requird: true },
-  secretkey: { type: String, requird: true },
-  shh_identity: { type: String },
-  selected_ftoken_shield_contract: { type: String },
-  selected_nftoken_shield_contract: { type: String },
+  name: {type: String, required: true},
+  email: {type: String, required: true},
+  address: {type: String, requird: true},
+  publickey: {type: String, requird: true},
+  secretkey: {type: String, requird: true},
+  shh_identity: {type: String},
+  selected_ftoken_shield_contract: {type: String},
+  selected_nftoken_shield_contract: {type: String},
   ftokenshield_contracts: [
     {
-      contract_name: { type: String },
+      contract_name: {type: String},
       contract_address: {
         type: String,
         trim: true,
@@ -22,7 +22,7 @@ export default new Schema({
   ],
   nftokenshield_contracts: [
     {
-      contract_name: { type: String },
+      contract_name: {type: String},
       contract_address: {
         type: String,
         trim: true,
@@ -33,8 +33,8 @@ export default new Schema({
   ],
   accounts: [
     {
-      address: { type: String },
-      password: { type: String },
+      address: {type: String},
+      password: {type: String},
     },
   ],
 });

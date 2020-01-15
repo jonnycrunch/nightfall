@@ -135,7 +135,7 @@ router.route('/transferFTCommitment').post(transferFTCommitment);
  *   .success((res, status) => doSomethingHere())
  *   .error((err, status) => doSomethingHere());
  *
- * @apiSuccess (Success 200) {String} z_C Coin commitment number.
+ * @apiSuccess (Success 200) {String} commitmentOfFirstToken Coin commitment number.
  * @apiSuccess (Success 200) {Number} firstCommitmentIndex coin index value from blockchain.
  *
  * @apiSuccessExample {json} Success response:
