@@ -550,13 +550,19 @@ async function transfer(
   console.log(`inputCommitments[1].index:`, inputCommitments[1].index);
   console.groupEnd();
 
-  const publicInputHash = utils.concatenateThenHash(
+  const publicInputsArray = [
     root,
     inputCommitments[0].nullifier,
     inputCommitments[1].nullifier,
     outputCommitments[0].commitment,
     outputCommitments[1].commitment,
-  );
+    ...encryption.flat().map(e => `0x${e.toString(16).padStart(64, '0')}`), // convert to hex string for sha hash
+    ...AUTHORITY_PUBLIC_KEYS.flat().map(e => `0x${e.toString(16).padStart(64, '0')}`),
+  ];
+
+  console.log('array of public inputs', publicInputsArray);
+
+  const publicInputHash = utils.concatenateThenHash(...publicInputsArray);
   console.log(
     'publicInputHash:',
     publicInputHash,
@@ -620,25 +626,17 @@ async function transfer(
 
   console.group('Transferring within the Shield contract');
 
-  const publicInputs = formatInputsForZkSnark([new Element(publicInputHash, 'field', 248, 1)]);
-
   console.log('proof:');
   console.log(proof);
-  console.log('publicInputs:');
-  console.log(publicInputs);
 
   console.log(`vkId: ${vkId}`);
 
   // Transfers commitment
   const txReceipt = await fTokenShieldInstance.transfer(
     proof,
-    publicInputs,
+    formatInputsForZkSnark([new Element(publicInputHash, 'field', 248, 1)]),
     vkId,
-    root,
-    inputCommitments[0].nullifier,
-    inputCommitments[1].nullifier,
-    outputCommitments[0].commitment,
-    outputCommitments[1].commitment,
+    publicInputsArray,
     {
       from: account,
       gas: 6500000,
