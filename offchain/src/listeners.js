@@ -8,7 +8,7 @@ async function insertNFTToDb(data, userData) {
       authorization: userData.jwtToken,
     },
     {
-      uri: data.uri,
+      tokenURI: data.tokenURI,
       tokenId: data.tokenId,
       shieldContractAddress: data.shieldContractAddress,
       sender: data.sender,
