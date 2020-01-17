@@ -1,0 +1,30 @@
+{
+  "MintNFToken": {
+    "vkId": "0x31c0c1efafb9dbe998e70d39f528d2d069b9bdc8bfe936774f9c2d5fa0d08857",
+    "Address": "0xfD245c0AC3F5a388E097348EAE03296348f125E1"
+  },
+  "TransferNFToken": {
+    "vkId": "0xa3c93ea4844d433f0c289e1f2a041fab0203f406c8bfc113de895896623ec7d6",
+    "Address": "0xfD245c0AC3F5a388E097348EAE03296348f125E1"
+  },
+  "BurnNFToken": {
+    "vkId": "0x7b341cfb81b9fa20b840a7d7f59a8a8a43c7315742cf10a95a48e819b25ba311",
+    "Address": "0xfD245c0AC3F5a388E097348EAE03296348f125E1"
+  },
+  "MintFToken": {
+    "vkId": "0x65acf46ae4d130e397ae140aa0eb8f242cfa0b034eb3756e50bc55b1012d0677",
+    "Address": "0xfD245c0AC3F5a388E097348EAE03296348f125E1"
+  },
+  "TransferFToken": {
+    "vkId": "0x9dc7c901934bb8b5fa86ad0893664c34937b955f73a85010434d2b42cfca5db4",
+    "Address": "0xfD245c0AC3F5a388E097348EAE03296348f125E1"
+  },
+  "SimpleBatchTransferFToken": {
+    "vkId": "0x2c7f4e4afa2be1cc545f19e0dfc1d58c399318298ee3f110dac397fc1c83c680",
+    "Address": "0xfD245c0AC3F5a388E097348EAE03296348f125E1"
+  },
+  "BurnFToken": {
+    "vkId": "0x1ebb88ea155550a0f95835aa0ccb9b02c44e8272ffb0ea73320cf107548b22c5",
+    "Address": "0xfD245c0AC3F5a388E097348EAE03296348f125E1"
+  }
+}
