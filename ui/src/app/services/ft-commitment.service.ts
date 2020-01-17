@@ -17,18 +17,16 @@ export default class FtCommitmentService {
 
  /**
   * Method to initiate a HTTP request to mint ERC-20 token commitment.
-  * @param amount {String} Amount to mint
-  * @param ownerPublicKey {String} Public key of Alice
-  * @param salt {String} Random Serial number
+  * @param value {String} Amount to mint
+  * @param S_A {String} Random Serial number
   */
- mintFTCommitment(amount: string, ownerPublicKey: string) {
+ mintFTCommitment(value: string) {
   const httpOptions = {
     headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
   };
 
   const body = {
-    amount,
-    ownerPublicKey
+    outputCommitments: [{value}],
   };
 
   const url = config.apiGateway.root + 'mintFTCommitment';
@@ -60,27 +58,16 @@ export default class FtCommitmentService {
    * @param salt {String} Serial number
    * @param commitmentIndex {String} Token commitment index
    * @param commitment {String} Token commitment
-   * @param ownerPublicKey {String} Public key of Alice
+   * @param publicKey {String} Public key of Alice
    */
-  burnFTCommitment (
-    amount: string,
-    salt: string,
-    commitmentIndex: string,
-    commitment: string,
-    ownerPublicKey: string,
-    payTo: string
-  ) {
+  burnFTCommitment (commitment, name: string) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
 
     const body = {
-      amount,
-      salt,
-      ownerPublicKey,
-      commitmentIndex,
-      commitment,
-      payTo
+      inputCommitments: [commitment],
+      receiver: { name },
     };
     const url = config.apiGateway.root + 'burnFTCommitment';
     return this.http
@@ -92,57 +79,18 @@ export default class FtCommitmentService {
    *
    * Method to initiate a HTTP request to transfer ERC-20 token commitments.
    *
-   * @param firstSelectedFTCAmount {String} Amount of selected token1
-   * @param secondSelectedFTCAmount {String} Amount of selected token2
-   * @param transferredAmount {String} Amount of token to transfer
-   * @param changeAmount {String} Amount of token after transfer
-   * @param receiverPublicKey {String} Public key of Bob
-   * @param saltOfFirstToken {String} Serial number of token1
-   * @param saltOfSecondToken {String} Serial number of token2
-   * @param firstCommitmentIndex {String} Token1 commitment index
-   * @param secondCommitmentIndex {String} Token2 commitment index
-   * @param transferredSalt {String} Serial number of token to transfer
-   * @param changeSalt {String} Serial number of change token
-   * @param commitmentOfFirstToken {String} Token1 commitment
-   * @param commitmentOfSecondToken {String} Token2 commitment
-   * @param ownerPublicKey {String} Public key of Alice
-   * @param receiver {String} Rceiver name
+   * @param inputCommitments {Object} selected commitments
+   * @param outputCommitments {Object} values array of transferred and change
+   * @param name {String} receiver name
    */
-  transferFTCommitment (
-    firstSelectedFTCAmount: string,
-    secondSelectedFTCAmount: string,
-    transferredAmount: string,
-    changeAmount: string,
-    saltOfFirstToken: string,
-    saltOfSecondToken: string,
-    firstCommitmentIndex: string,
-    secondCommitmentIndex: string,
-    commitmentOfFirstToken: string,
-    commitmentOfSecondToken: string,
-    ownerPublicKey: string,
-    receiver) {
+  transferFTCommitment (inputCommitments, outputCommitments, name) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
-    const firstFTCommitment = {
-      amount: firstSelectedFTCAmount,
-      salt: saltOfFirstToken,
-      commitmentIndex: firstCommitmentIndex,
-      commitment: commitmentOfFirstToken
-    };
-    const secondFTCommitment = {
-      amount: secondSelectedFTCAmount,
-      salt: saltOfSecondToken,
-      commitmentIndex: secondCommitmentIndex,
-      commitment: commitmentOfSecondToken
-    };
     const body = {
-      firstFTCommitment,
-      secondFTCommitment,
-      transferredAmount,
-      changeAmount,
-      ownerPublicKey,
-      receiver
+      inputCommitments,
+      outputCommitments,
+      receiver: { name },
     };
 
     const url = config.apiGateway.root + 'transferFTCommitment';
@@ -162,22 +110,16 @@ export default class FtCommitmentService {
    * @param transferData {Array} Array of value to transfer and receiver name
    */
   transferFTBatchCommitment (
-    amount: string,
-    salt: string,
-    commitment: string,
-    commitmentIndex: Number,
-    transferData: Object
+    commitment,
+    outputCommitments,
     ) {
     const httpOptions = {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
     };
 
     const body = {
-      amount,
-      salt,
-      commitment,
-      commitmentIndex,
-      transferData
+      inputCommitments: [commitment],
+      outputCommitments,
     };
 
     const url = config.apiGateway.root + 'simpleFTCommitmentBatchTransfer';

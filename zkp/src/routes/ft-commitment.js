@@ -1,15 +1,15 @@
 /* eslint-disable camelcase */
 
-import { Router } from 'express';
+import {Router} from 'express';
 import utils from '../zkpUtils';
 import fTokenController from '../f-token-controller';
-import { getVkId, getTruffleContractInstance } from '../contractUtils';
+import {getVkId, getTruffleContractInstance} from '../contractUtils';
 
 const router = Router();
 
 async function mint(req, res, next) {
-  const { address } = req.headers;
-  const { amount, ownerPublicKey } = req.body;
+  const {address} = req.headers;
+  const {value, owner} = req.body;
   const salt = await utils.rndHex(32);
   const vkId = await getVkId('MintFToken');
   const {
@@ -18,9 +18,9 @@ async function mint(req, res, next) {
   } = await getTruffleContractInstance('FTokenShield');
 
   try {
-    const { commitment, commitmentIndex } = await fTokenController.mint(
-      amount,
-      ownerPublicKey,
+    const {commitment, commitmentIndex} = await fTokenController.mint(
+      value,
+      owner.publicKey,
       salt,
       vkId,
       {
@@ -46,51 +46,23 @@ async function mint(req, res, next) {
 }
 
 async function transfer(req, res, next) {
-  const { address } = req.headers;
-  const { transferredAmount, changeAmount, receiverPublicKey, senderSecretKey } = req.body;
+  const {address} = req.headers;
+  const {inputCommitments, outputCommitments, receiver, sender} = req.body;
   const vkId = await getVkId('TransferFToken');
   const {
     contractJson: fTokenShieldJson,
     contractInstance: fTokenShield,
   } = await getTruffleContractInstance('FTokenShield');
 
-  let { amount: value, salt, commitmentIndex: index, commitment } = req.body.firstFTCommitment;
+  outputCommitments[0].salt = await utils.rndHex(32);
+  outputCommitments[1].salt = await utils.rndHex(32);
 
-  const inputCommitments = [];
-  inputCommitments.push({
-    value,
-    salt,
-    commitment,
-    index,
-  });
-
-  ({ amount: value, salt, commitmentIndex: index, commitment } = req.body.secondFTCommitment);
-
-  inputCommitments.push({
-    value,
-    salt,
-    commitment,
-    index,
-  });
-  const outputCommitments = [
-    {
-      value: transferredAmount,
-      salt: await utils.rndHex(32),
-    },
-    {
-      value: changeAmount,
-      salt: await utils.rndHex(32),
-    },
-  ];
   try {
-    const {
-      outputCommitments: returnedOutputCommitments,
-      txReceipt,
-    } = await fTokenController.transfer(
+    const {txReceipt} = await fTokenController.transfer(
       inputCommitments,
       outputCommitments,
-      receiverPublicKey,
-      senderSecretKey,
+      receiver.publicKey,
+      sender.secretKey,
       vkId,
       {
         fTokenShieldJson,
@@ -103,15 +75,7 @@ async function transfer(req, res, next) {
         pkPath: `${process.cwd()}/code/gm17/ft-transfer/proving.key`,
       },
     );
-    res.data = {
-      transferredCommitment: returnedOutputCommitments[0].commitment,
-      transferredCommitmentIndex: returnedOutputCommitments[0].index,
-      changeCommitment: returnedOutputCommitments[1].commitment,
-      changeCommitmentIndex: returnedOutputCommitments[1].index,
-      transferredSalt: returnedOutputCommitments[0].salt,
-      changeSalt: returnedOutputCommitments[1].salt,
-      txReceipt,
-    };
+    res.data = {outputCommitments, txReceipt};
     next();
   } catch (err) {
     next(err);
@@ -119,8 +83,8 @@ async function transfer(req, res, next) {
 }
 
 async function burn(req, res, next) {
-  const { amount, receiverSecretKey, salt, commitment, commitmentIndex, tokenReceiver } = req.body;
-  const { address } = req.headers;
+  const {value, salt, commitment, commitmentIndex, receiver, sender} = req.body;
+  const {address} = req.headers;
   const vkId = await getVkId('BurnFToken');
   const {
     contractJson: fTokenShieldJson,
@@ -128,9 +92,9 @@ async function burn(req, res, next) {
   } = await getTruffleContractInstance('FTokenShield');
 
   try {
-    const { txReceipt } = await fTokenController.burn(
-      amount,
-      receiverSecretKey,
+    await fTokenController.burn(
+      value,
+      sender.secretKey,
       salt,
       commitment,
       commitmentIndex,
@@ -139,7 +103,7 @@ async function burn(req, res, next) {
         fTokenShieldJson,
         fTokenShieldAddress: fTokenShield.address,
         account: address,
-        tokenReceiver,
+        tokenReceiver: receiver.address,
       },
       {
         codePath: `${process.cwd()}/code/gm17/ft-burn/out`,
@@ -147,11 +111,7 @@ async function burn(req, res, next) {
         pkPath: `${process.cwd()}/code/gm17/ft-burn/proving.key`,
       },
     );
-    res.data = {
-      commitment,
-      commitmentIndex,
-      txReceipt,
-    };
+    res.data = {message: 'Burn successful'};
     next();
   } catch (err) {
     next(err);
@@ -162,12 +122,12 @@ async function checkCorrectness(req, res, next) {
   console.log('\nzkp/src/routes/ft-commitment', '\n/checkCorrectness', '\nreq.body', req.body);
 
   try {
-    const { address } = req.headers;
-    const { amount, salt, publicKey, commitment, commitmentIndex, blockNumber } = req.body;
+    const {address} = req.headers;
+    const {value, salt, pk, commitment, commitmentIndex, blockNumber} = req.body;
 
     const results = await fTokenController.checkCorrectness(
-      amount,
-      publicKey,
+      value,
+      pk,
       salt,
       commitment,
       commitmentIndex,
@@ -182,8 +142,8 @@ async function checkCorrectness(req, res, next) {
 }
 
 async function setFTCommitmentShieldAddress(req, res, next) {
-  const { address } = req.headers;
-  const { coinShield } = req.body;
+  const {address} = req.headers;
+  const {coinShield} = req.body;
 
   try {
     await fTokenController.setShield(coinShield, address);
@@ -198,11 +158,11 @@ async function setFTCommitmentShieldAddress(req, res, next) {
 }
 
 async function getFTCommitmentShieldAddress(req, res, next) {
-  const { address } = req.headers;
+  const {address} = req.headers;
 
   try {
     const shieldAddress = await fTokenController.getShieldAddress(address);
-    const { name } = await fTokenController.getTokenInfo(address);
+    const {name} = await fTokenController.getTokenInfo(address);
     res.data = {
       shieldAddress,
       name,
@@ -214,7 +174,7 @@ async function getFTCommitmentShieldAddress(req, res, next) {
 }
 
 async function unsetFTCommitmentShieldAddress(req, res, next) {
-  const { address } = req.headers;
+  const {address} = req.headers;
 
   try {
     fTokenController.unSetShield(address);
@@ -228,39 +188,31 @@ async function unsetFTCommitmentShieldAddress(req, res, next) {
 }
 
 async function simpleFTCommitmentBatchTransfer(req, res, next) {
-  const { address } = req.headers;
-  const {
-    amount,
-    salt,
-    commitment,
-    commitmentIndex,
-    transferData, // [{value: "0x00000000000000000000000000000002", receiverPublicKey: "0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8"}]
-    senderSecretKey,
-  } = req.body;
+  const {address} = req.headers;
+  const {inputCommitment, outputCommitments, sender} = req.body;
   const {
     contractJson: fTokenShieldJson,
     contractInstance: fTokenShield,
   } = await getTruffleContractInstance('FTokenShield');
   const receiversPublicKeys = [];
 
-  if (!transferData || transferData.length !== 20) throw new Error('Invalid data input');
+  if (!outputCommitments || outputCommitments.length !== 20) throw new Error('Invalid data input');
 
-  for (const data of transferData) {
+  for (const data of outputCommitments) {
     /* eslint-disable no-await-in-loop */
     data.salt = await utils.rndHex(32);
-    receiversPublicKeys.push(data.receiverPublicKey);
+    receiversPublicKeys.push(data.receiver.publicKey);
   }
 
   try {
     const {
-      transferredCommitment,
-      transferredCommitmentIndex,
+      maxOutputCommitmentIndex,
       txReceipt,
     } = await fTokenController.simpleFungibleBatchTransfer(
-      { value: amount, salt, commitment, index: commitmentIndex },
-      transferData,
+      inputCommitment,
+      outputCommitments,
       receiversPublicKeys,
-      senderSecretKey,
+      sender.secretKey,
       await getVkId('SimpleBatchTransferFToken'),
       {
         account: address,
@@ -274,17 +226,16 @@ async function simpleFTCommitmentBatchTransfer(req, res, next) {
       },
     );
 
-    let lastCommitmentIndex = parseInt(transferredCommitmentIndex, 10);
+    let lastCommitmentIndex = parseInt(maxOutputCommitmentIndex, 10);
 
-    transferredCommitment.forEach((transferCommitment, indx) => {
-      transferData[indx].commitment = transferCommitment;
-      transferData[indx].commitmentIndex = lastCommitmentIndex - (transferredCommitment.length - 1);
+    outputCommitments.forEach((transferCommitment, indx) => {
+      outputCommitments[indx].commitmentIndex =
+        lastCommitmentIndex - (outputCommitments.length - 1);
       lastCommitmentIndex += 1;
     });
-    const commitments = transferData;
 
     res.data = {
-      commitments,
+      outputCommitments,
       txReceipt,
     };
     next();

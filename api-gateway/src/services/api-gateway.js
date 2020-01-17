@@ -24,7 +24,7 @@ export async function loginHandler(req, res, next) {
       address: data.address,
       name: data.name,
       jwtToken: token,
-      sk_A: data.secretkey,
+      sk_A: data.secretKey,
     };
     await setWhisperIdentityAndSubscribe(userData);
 
@@ -64,7 +64,7 @@ export async function createAccountHandler(req, res, next) {
 
     await offchain.setName(address, name);
     await offchain.setZkpPublicKey(address, {
-      publicKey: data.publickey,
+      publicKey: data.publicKey,
     });
 
     res.data = data;
@@ -277,7 +277,7 @@ export async function getTokenCommitmentCounts(req, res, next) {
     let totalAmount = 0;
     if (ftCommitments.length) {
       ftCommitments.forEach(ftCommitment => {
-        totalAmount += Number(ftCommitment.ft_commitment_value);
+        totalAmount += Number(ftCommitment.value);
       });
     }
 

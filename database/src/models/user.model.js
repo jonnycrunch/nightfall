@@ -4,9 +4,9 @@ export default new Schema({
   name: {type: String, required: true},
   email: {type: String, required: true},
   address: {type: String, requird: true},
-  publickey: {type: String, requird: true},
-  secretkey: {type: String, requird: true},
-  shh_identity: {type: String},
+  publicKey: {type: String, requird: true},
+  secretKey: {type: String, requird: true},
+  shhIdentity: {type: String},
   selected_ftoken_shield_contract: {type: String},
   selected_nftoken_shield_contract: {type: String},
   ftokenshield_contracts: [

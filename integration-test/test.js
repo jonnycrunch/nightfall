@@ -70,14 +70,14 @@ describe('****** Integration Test ******\n', function() {
         .use(prefix(apiServerURL))
         .set('Authorization', alice.token);
 
-      alice.secretkey = res.body.data.secretkey;
+      alice.secretKey = res.body.data.secretKey;
 
       res = await request
         .get('/getUserDetails')
         .use(prefix(apiServerURL))
         .set('Authorization', bob.token);
 
-      bob.secretkey = res.body.data.secretkey;
+      bob.secretKey = res.body.data.secretKey;
     });
 
     /*
@@ -330,7 +330,7 @@ describe('****** Integration Test ******\n', function() {
         request
           .post('/mintFTCommitment')
           .use(prefix(apiServerURL))
-          .send(erc20Commitments.mint[0])
+          .send({outputCommitments: [erc20Commitments.mint[0]]})
           .set('Accept', 'application/json')
           .set('Authorization', alice.token)
           .end((err, res) => {
@@ -355,7 +355,7 @@ describe('****** Integration Test ******\n', function() {
         request
           .post('/mintFTCommitment')
           .use(prefix(apiServerURL))
-          .send(erc20Commitments.mint[1])
+          .send({outputCommitments: [erc20Commitments.mint[1]]})
           .set('Accept', 'application/json')
           .set('Authorization', alice.token)
           .end((err, res) => {
@@ -378,55 +378,33 @@ describe('****** Integration Test ******\n', function() {
        * Transfer ERC-20 Commitment.
        */
       it(`Transfer ${erc20.transfer} ERC-20 Commitment to Bob`, function(done) {
-        const firstFTCommitment = {
-          amount: erc20Commitments.mint[0].amount,
-          commitmentIndex: erc20Commitments.mint[0].commitmentIndex,
-          commitment: erc20Commitments.mint[0].commitment,
-          salt: erc20Commitments.mint[0].salt,
-        };
-        const secondFTCommitment = {
-          amount: erc20Commitments.mint[1].amount,
-          commitmentIndex: erc20Commitments.mint[1].commitmentIndex,
-          commitment: erc20Commitments.mint[1].commitment,
-          salt: erc20Commitments.mint[1].salt,
-        };
-        const {value: transferredAmount} = erc20Commitments.transfer;
-        const {value: changeAmount} = erc20Commitments.change;
         request
           .post('/transferFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            firstFTCommitment,
-            secondFTCommitment,
-            transferredAmount,
-            changeAmount,
-            receiver: bob.name,
+            inputCommitments: erc20Commitments.mint,
+            outputCommitments: [erc20Commitments.transfer, erc20Commitments.change],
+            receiver: {name: bob.name},
           })
           .set('Accept', 'application/json')
           .set('Authorization', alice.token)
           .end((err, res) => {
             if (err) return done(err);
-            expect(res).to.have.nested.property('body.data.transferredSalt');
-            expect(res).to.have.nested.property('body.data.changeSalt');
-            expect(res).to.have.nested.property('body.data.transferredCommitment');
-            expect(res).to.have.nested.property('body.data.transferredCommitmentIndex');
-            expect(res).to.have.nested.property('body.data.changeCommitment');
-            expect(res).to.have.nested.property('body.data.changeCommitmentIndex');
 
-            erc20Commitments.transfer.transferredSalt = res.body.data.transferredSalt; // set Salt from response to calculate and verify commitment.
-            erc20Commitments.change.changeSalt = res.body.data.changeSalt; // set Salt from response to calculate and verify commitment.
-            console.log(res.body.data.transferredCommitment, erc20Commitments.transfer.commitment);
-            expect(res.body.data.transferredCommitment).to.be.equal(
+            const outputCommitments = res.body.data;
+            erc20Commitments.transfer.salt = outputCommitments[0].salt; // set Salt from response to calculate and verify commitment.
+            erc20Commitments.change.salt = outputCommitments[1].salt; // set Salt from response to calculate and verify commitment.
+
+            expect(outputCommitments[0].commitment).to.be.equal(
               erc20Commitments.transfer.commitment,
             );
-            expect(res.body.data.transferredCommitmentIndex).to.be.equal(
+            expect(outputCommitments[0].commitmentIndex).to.be.equal(
               erc20Commitments.transfer.commitmentIndex,
             );
-            expect(res.body.data.changeCommitment).to.be.equal(erc20Commitments.change.commitment);
-            expect(res.body.data.changeCommitmentIndex).to.be.equal(
+            expect(outputCommitments[1].commitment).to.be.equal(erc20Commitments.change.commitment);
+            expect(outputCommitments[1].commitmentIndex).to.be.equal(
               erc20Commitments.change.commitmentIndex,
             );
-
             return done();
           });
       });
@@ -440,19 +418,17 @@ describe('****** Integration Test ******\n', function() {
           .post('/burnFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            amount: erc20Commitments.change.value,
-            salt: erc20Commitments.change.changeSalt,
-            commitmentIndex: erc20Commitments.change.commitmentIndex,
-            commitment: erc20Commitments.change.commitment,
+            inputCommitments: [erc20Commitments.change],
+            receiver: {
+              name: bob.name,
+            },
           })
           .set('Accept', 'application/json')
           .set('Authorization', alice.token)
           .end((err, res) => {
             if (err) return done(err);
-            expect(res).to.have.nested.property('body.data.commitment');
-            expect(res).to.have.nested.property('body.data.commitmentIndex');
-            expect(res.body.data.commitment).to.be.equal(erc20Commitments.change.commitment);
-            expect(res.body.data.commitmentIndex).to.be.equal(3);
+            expect(res).to.have.nested.property('body.data.message');
+            expect(res.body.data.message).to.be.equal('Burn successful');
             return done();
           });
       });
@@ -471,19 +447,17 @@ describe('****** Integration Test ******\n', function() {
           .post('/burnFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            amount: erc20Commitments.transfer.value,
-            salt: erc20Commitments.transfer.transferredSalt,
-            commitmentIndex: erc20Commitments.transfer.commitmentIndex,
-            commitment: erc20Commitments.transfer.commitment,
+            inputCommitments: [erc20Commitments.transfer],
+            receiver: {
+              name: bob.name,
+            },
           })
           .set('Accept', 'application/json')
           .set('Authorization', bob.token)
           .end((err, res) => {
             if (err) return done(err);
-            expect(res).to.have.nested.property('body.data.commitment');
-            expect(res).to.have.nested.property('body.data.commitmentIndex');
-            expect(res.body.data.commitment).to.be.equal(erc20Commitments.transfer.commitment);
-            expect(res.body.data.commitmentIndex).to.be.equal(2);
+            expect(res).to.have.nested.property('body.data.message');
+            expect(res.body.data.message).to.be.equal('Burn successful');
             return done();
           });
       });
@@ -491,12 +465,12 @@ describe('****** Integration Test ******\n', function() {
        * Step 15.
        * Transfer ERC-20 token
        */
-      it(`Transfer ${erc20.transfer} ERC-20 tokens to Alice`, function(done) {
+      it(`Transfer ${erc20.mint} ERC-20 tokens to Alice`, function(done) {
         request
           .post('/transferFToken')
           .use(prefix(apiServerURL))
           .send({
-            value: erc20.transfer,
+            value: erc20.mint,
             receiver: {
               name: alice.name,
             },
@@ -569,7 +543,11 @@ describe('****** Integration Test ******\n', function() {
         .post('/mintFTCommitment')
         .use(prefix(apiServerURL))
         .send({
-          amount: erc20CommitmentBatchTransfer.mintCommitmentValue,
+          outputCommitments: [
+            {
+              value: erc20CommitmentBatchTransfer.value,
+            },
+          ],
         })
         .set('Accept', 'application/json')
         .set('Authorization', alice.token)
@@ -592,22 +570,20 @@ describe('****** Integration Test ******\n', function() {
      * Transfer ERC-20 Commitment.
      */
     it(`ERC-20 Commitment Batch transfer ERC-20 Commitment to users`, function(done) {
-      const {
-        mintCommitmentValue: amount,
-        salt,
-        commitment,
-        commitmentIndex,
-        transferData,
-      } = erc20CommitmentBatchTransfer;
+      const {value, salt, commitment, commitmentIndex, transferData} = erc20CommitmentBatchTransfer;
       request
         .post('/simpleFTCommitmentBatchTransfer')
         .use(prefix(apiServerURL))
         .send({
-          amount,
-          salt,
-          commitment,
-          commitmentIndex,
-          transferData,
+          inputCommitments: [
+            {
+              value,
+              salt,
+              commitment,
+              commitmentIndex,
+            },
+          ],
+          outputCommitments: transferData,
         })
         .set('Accept', 'application/json')
         .set('Authorization', alice.token)

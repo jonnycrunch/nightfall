@@ -11,7 +11,7 @@ async function mint(req, res, next) {
   const {address} = req.headers;
   const {
     tokenId,
-    owner: {publicKey: ownerPublicKey},
+    owner: {publicKey},
   } = req.body;
   const salt = await utils.rndHex(32);
   const vkId = await getVkId('MintNFToken');
@@ -23,7 +23,7 @@ async function mint(req, res, next) {
   try {
     const {commitment, commitmentIndex} = await nfController.mint(
       tokenId,
-      ownerPublicKey,
+      publicKey,
       salt,
       vkId,
       {
@@ -150,11 +150,11 @@ async function checkCorrectness(req, res, next) {
 
   try {
     const {address} = req.headers;
-    const {tokenId, ownerPublicKey, salt, commitment, commitmentIndex, blockNumber} = req.body;
+    const {tokenId, publicKey, salt, commitment, commitmentIndex, blockNumber} = req.body;
 
     const results = await nfController.checkCorrectness(
       tokenId,
-      ownerPublicKey,
+      publicKey,
       salt,
       commitment,
       commitmentIndex,

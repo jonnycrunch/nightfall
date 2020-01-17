@@ -1,16 +1,16 @@
-import {whisperTransaction} from './whisper';
-import {accounts, db, offchain, zkp} from '../rest';
+import { sendWhisperMessage } from './whisper';
+import { accounts, db, offchain, zkp } from '../rest';
 
 /**
  * This function will insert FT commitment in database
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    publicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.body {
-    amount: 0x0000002,
+    value: 0x0000002,
     salt: '0xE9A313C89C449AF6E630C25AB3ACC0FC3BAB821638E0D55599B518',
     commitment: '0xdd3434566',
     commitmentIndex: 1,
@@ -35,7 +35,7 @@ export async function insertFTCommitmentToDb(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    publicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.query {
@@ -59,7 +59,7 @@ export async function getFTCommitments(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    publicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.query {
@@ -93,32 +93,34 @@ export async function checkCorrectnessForFTCommitment(req, res, next) {
  * req.user {
     address: '0x3bd5ae4b9ae233843d9ccd30b16d3dbc0acc5b7f',
     name: 'alice',
-    ownerPublicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
+    publicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
     password: 'alicesPassword'
   }
  * req.body {
-    amount: '0x00000000000000000000000000002710',
+    outputCommitments: [{
+      value: '0x00000000000000000000000000002710',
+    }],
   }
  * @param {*} req
  * @param {*} res
  */
 export async function mintFTCommitment(req, res, next) {
-  const {amount} = req.body;
+  const {
+    outputCommitments: [outputCommitment],
+  } = req.body;
+  outputCommitment.owner = req.user;
   try {
-    const data = await zkp.mintFTCommitment(req.user, {
-      amount,
-      ownerPublicKey: req.user.ownerPublicKey,
-    });
+    const data = await zkp.mintFTCommitment(req.user, outputCommitment);
 
     data.commitmentIndex = parseInt(data.commitmentIndex, 16);
 
-    const {salt, commitment, commitmentIndex} = data;
-
     await db.insertFTCommitment(req.user, {
-      amount,
-      salt,
-      commitment,
-      commitmentIndex,
+      outputCommitments: [
+        {
+          ...outputCommitment,
+          ...data,
+        },
+      ],
       isMinted: true,
     });
 
@@ -134,31 +136,43 @@ export async function mintFTCommitment(req, res, next) {
  * req.user {
     address: '0x3bd5ae4b9ae233843d9ccd30b16d3dbc0acc5b7f',
     name: 'alice',
-    ownerPublicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
+    publicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
     password: 'alicesPassword'
   }
- * req.body {
-    firstFTCommitment: {
-      amount: '0x00000000000000000000000000002710',
-      salt: '0x14de022c9b4a437b346f04646bd7809deb81c38288e9614478351d',
-      commitmentIndex: 0,
-      commitment: '0x39aaa6fe40c2106f49f72c67bc24d377e180baf3fe211c5c90e254'
+  * req.body {
+    inputCommitments: [
+      {
+        value: '0x00000000000000000000000000002710',
+        salt: '0x14de022c9b4a437b346f04646bd7809deb81c38288e9614478351d',
+        commitment: '0x39aaa6fe40c2106f49f72c67bc24d377e180baf3fe211c5c90e254',
+        commitmentIndex: 0,
+        owner,
+      },
+      {
+        value: '0x00000000000000000000000000001388',
+        salt: '0x14de022c9b4a437b346f04646bd7809deb81c38288e9614478351d',
+        commitment: '0x39aaa6fe40c2106f49f72c67bc24d377e180baf3fe211c5c90e254',
+        commitmentIndex: 1,
+        owner,
+      },
+    ],
+    outputCommitments: [
+      {
+        value: '0x00000000000000000000000000001770',
+      },
+      {
+        value: '0x00000000000000000000000000002328',
+      }
+    ],
+    receiver: {
+      name: 'Bob'
     },
-    secondFTCommitment: {
-      amount: '0x00000000000000000000000000001388',
-      salt: '0xdd22d29b452a36d4f9fc3b2ad00e9034cc0a4175b52aa35fb7cd92',
-      commitmentIndex: 1,
-      commitment: '0x0ca8040181b3fc505eed1ee6892622054ae877ddf8f9dafe93b072'
-    },
-    transferredAmount: '0x00000000000000000000000000001770',
-    changeAmount: '0x00000000000000000000000000002328',
-    ownerPublicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
-    receiver: 'bob'
   }
  * @param {*} req
  * @param {*} res
  */
 export async function transferFTCommitment(req, res, next) {
+  const { receiver, inputCommitments } = req.body;
   try {
     // Generate a new one-time-use Ethereum address for the sender to use
     const password = (req.user.address + Date.now()).toString();
@@ -166,115 +180,72 @@ export async function transferFTCommitment(req, res, next) {
     await db.updateUserWithPrivateAccount(req.user, {address, password});
     await accounts.unlockAccount({address, password});
 
-    req.body.receiverPublicKey = await offchain.getZkpPublicKeyFromName(req.body.receiver); // fetch publicKey from PKD by passing username
+    receiver.publicKey = await offchain.getZkpPublicKeyFromName(receiver.name); // fetch pk from PKD by passing username
 
-    // get logged in user's secretkey.
-    const user = await db.fetchUser(req.user);
-    req.body.senderSecretKey = user.secretkey;
-    const data = await zkp.transferFTCommitment({address}, req.body);
-    data.transferredCommitmentIndex = parseInt(data.transferredCommitmentIndex, 16);
-    data.changeCommitmentIndex = parseInt(data.changeCommitmentIndex, 16);
+    // get logged in user's secretKey.
+    req.body.sender = {};
+    req.body.sender.secretKey = (await db.fetchUser(req.user)).secretKey;
 
-    const {transferredAmount, changeAmount, receiver} = req.body;
-    let {amount, salt, commitmentIndex, commitment} = req.body.firstFTCommitment;
-    const {
-      transferredCommitment,
-      transferredCommitmentIndex,
-      changeCommitment,
-      changeCommitmentIndex,
-      transferredSalt,
-      changeSalt,
-    } = data;
+    const { outputCommitments, txReceipt } = await zkp.transferFTCommitment({ address }, req.body);
+
+    const [transferCommitment, changeCommitment] = outputCommitments;
+    transferCommitment.owner = receiver;
+    transferCommitment.commitmentIndex = parseInt(transferCommitment.commitmentIndex, 16);
+    changeCommitment.owner = req.user;
+    changeCommitment.commitmentIndex = parseInt(changeCommitment.commitmentIndex, 16);
 
     // update slected coin1 with tansferred data
-    await db.updateFTCommitmentByCommitmentHash(req.user, commitment, {
-      amount,
-      salt,
-      commitment,
-      commitmentIndex,
-      transferredAmount,
-      transferredSalt,
-      transferredCommitment,
-      transferredCommitmentIndex,
-      changeAmount,
-      changeSalt,
-      changeCommitment,
-      changeCommitmentIndex,
-      receiver,
+    await db.updateFTCommitmentByCommitmentHash(req.user, inputCommitments[0].commitment, {
+      outputCommitments: [{ owner: receiver }],
       isTransferred: true,
     });
 
     ({amount, salt, commitmentIndex, commitment} = req.body.secondFTCommitment);
 
     // update slected coin with tansferred data
-    await db.updateFTCommitmentByCommitmentHash(req.user, commitment, {
-      amount,
-      salt,
-      commitment,
-      commitmentIndex,
-      transferredAmount,
-      transferredSalt,
-      transferredCommitment,
-      transferredCommitmentIndex,
-      changeAmount,
-      changeSalt,
-      changeCommitment,
-      changeCommitmentIndex,
-      receiver,
+    await db.updateFTCommitmentByCommitmentHash(req.user, inputCommitments[1].commitment, {
+      outputCommitments: [{ owner: receiver }],
       isTransferred: true,
     });
 
     // transfer is only case where we need to call api to add coin transaction
     // rest of case inserting coin or updating coin will add respective transfer log.
     await db.insertFTCommitmentTransaction(req.user, {
-      amount: transferredAmount,
-      salt: transferredSalt,
-      commitment: transferredCommitment,
-      commitmentIndex: transferredCommitmentIndex,
-      changeAmount,
-      changeSalt,
-      changeCommitment,
-      changeCommitmentIndex,
+      inputCommitments,
+      outputCommitments,
       receiver,
+      sender: {
+        name: req.user.name,
+        publicKey: req.user.publicKey,
+      },
       isTransferred: true,
-      usedFTCommitments: [
-        {
-          amount: req.body.firstFTCommitment.amount,
-          commitment: req.body.firstFTCommitment.commitment,
-        },
-        {
-          amount,
-          commitment,
-        },
-      ],
     });
 
     // add change to user database
-    if (parseInt(changeAmount, 16)) {
+    if (parseInt(changeCommitment.value, 16)) {
       await db.insertFTCommitment(req.user, {
-        amount: changeAmount,
-        salt: changeSalt,
-        commitment: changeCommitment,
-        commitmentIndex: changeCommitmentIndex,
+        outputCommitments: [changeCommitment],
         isChange: true,
       });
     }
 
+    const user = await db.fetchUser(req.user);
     // note:
-    // transferredAmount is the value transferred to the receiver
-    // changeAmount is the value returned as 'change' to the sender
-    await whisperTransaction(req, {
-      amount: transferredAmount,
-      salt: transferredSalt,
-      publicKey: req.body.receiverPublicKey,
-      commitment: transferredCommitment,
-      commitmentIndex: transferredCommitmentIndex,
-      blockNumber: data.txReceipt.receipt.blockNumber,
+    // E is the value transferred to the receiver
+    // F is the value returned as 'change' to the sender
+    await sendWhisperMessage(user.shhIdentity, {
+      outputCommitments: [transferCommitment],
+      blockNumber: txReceipt.receipt.blockNumber,
       receiver,
+      sender: {
+        name: req.user.name,
+        publicKey: req.user.publicKey,
+      },
+      isReceived: true,
       for: 'FTCommitment',
     });
 
-    res.data = data;
+    res.data = outputCommitments;
     next();
   } catch (err) {
     next(err);
@@ -284,67 +255,61 @@ export async function transferFTCommitment(req, res, next) {
 /**
  * This function will burn a coin
  * req.body {
-  amount: '0x00000000000000000000000000000001',
-  salt: '0xa31adb1074f977413fddd3953e333529a3494e110251368cc823fb',
-  commitmentIndex: 0,
-  commitment: '0x1ec4a9b406fd3d79a01360ccd14c8530443ea9869f8e9560dafa56',
-  payTo: 'bob',
+    inputCommitments: [
+      {
+        value: '0x00000000000000000000000000000001',
+        salt: '0xa31adb1074f977413fddd3953e333529a3494e110251368cc823fb',
+        commitment: '0x1ec4a9b406fd3d79a01360ccd14c8530443ea9869f8e9560dafa56',
+        commitmentIndex: 0,
+      }
+    ],
+    receiver: {
+      name: 'bob'
+    }
  }
  * @param {*} req
  * @param {*} res
  */
 export async function burnFTCommitment(req, res, next) {
+  const {
+    receiver,
+    inputCommitments: [commitment],
+  } = req.body;
   try {
-    const payToAddress = req.body.payTo
-      ? await offchain.getAddressFromName(req.body.payTo)
-      : req.user.address;
-
+    receiver.address = await offchain.getAddressFromName(receiver.name);
     const user = await db.fetchUser(req.user);
-    req.body.receiverSecretKey = user.secretkey; // get logged in user's secretkey.
-    const {amount, receiverSecretKey, salt, commitment, commitmentIndex, payTo} = req.body;
 
-    const burnFTCommitmentBody = {
-      amount,
-      receiverSecretKey,
-      salt,
-      commitment,
-      commitmentIndex,
-      receiver: payTo || req.user.name,
-    };
-    res.data = await zkp.burnFTCommitment({...burnFTCommitmentBody, payTo: payToAddress}, req.user);
+    res.data = await zkp.burnFTCommitment(req.user, {
+      ...commitment,
+      sender: {
+        secretKey: user.secretKey,
+      },
+      receiver,
+    });
 
     // update slected coin2 with tansferred data
-    await db.updateFTCommitmentByCommitmentHash(req.user, req.body.commitment, {
-      amount,
-      salt,
-      commitment,
-      commitmentIndex,
-      receiver: payTo || req.user.name,
+    await db.updateFTCommitmentByCommitmentHash(req.user, commitment.commitment, {
       isBurned: true,
     });
 
-    if (payTo) {
-      await whisperTransaction(req, {
-        amount: Number(amount),
-        shieldContractAddress: user.selected_ftoken_shield_contract,
-        receiver: payTo,
-        sender: req.user.name,
-        senderAddress: req.user.address,
-        blockNumber: res.data.txReceipt.receipt.blockNumber,
-        for: 'FToken',
-      }); // send ft token data to BOB side
-    } else {
-      await db.insertFTTransaction(req.user, {
-        value: Number(req.body.amount),
-        shieldContractAddress: user.selected_coin_shield_contract,
-        receiver: {
-          name: req.body.payTo || req.user.name,
-          address: payToAddress,
-        },
-        sender: req.user,
-        isReceived: true,
-      });
-    }
+    await db.insertFTCommitmentTransaction(req.user, {
+      inputCommitments: [commitment],
+      receiver,
+      sender: {
+        name: req.user.name,
+        publicKey: req.user.publicKey,
+      },
+      isBurned: true,
+    });
+
+    await sendWhisperMessage(user.shhIdentity, {
+      value: Number(commitment.value),
+      shieldContractAddress: user.selected_coin_shield_contract,
+      receiver,
+      sender: req.user,
+      isReceived: true,
+      for: 'FToken',
+    }); // send ft token data to BOB side
 
     next();
   } catch (err) {
@@ -357,22 +322,28 @@ export async function burnFTCommitment(req, res, next) {
  * req.user {
     address: '0x3bd5ae4b9ae233843d9ccd30b16d3dbc0acc5b7f',
     name: 'alice',
-    ownerPublicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
+    publicKey: '0x70dd53411043c9ff4711ba6b6c779cec028bd43e6f525a25af36b8',
     password: 'alicesPassword'
   }
  * req.body {
-    "amount": "0x00000000000000000000000000000028",
-    "salt": "0x75f9ceee5b886382c4fe81958da985cd812303b875210b9ca2d75378bb9bd801",
-    "commitment": "0x00000000008ec724591fde260927e3fcf85f039de689f4198ee841fcb63b16ed",
-    "commitmentIndex": 21,
-    "transferData": [
+    inputCommitments: [{
+      value: "0x00000000000000000000000000000028",
+      salt: "0x75f9ceee5b886382c4fe81958da985cd812303b875210b9ca2d75378bb9bd801",
+      commitment: "0x00000000008ec724591fde260927e3fcf85f039de689f4198ee841fcb63b16ed",
+      commitmentIndex: 1,
+    }],
+    outputCommitments: [
       {
         "value": "0x00000000000000000000000000000002",
-        "receiverName": "b"
+        "receiver": {
+          name: "b",
+        }
       },
       {
         "value": "0x00000000000000000000000000000002",
-        "receiverName: "a"
+        "receiver": {
+          name: "a",
+        }
       }
     ]
   }
@@ -381,7 +352,13 @@ export async function burnFTCommitment(req, res, next) {
  */
 export async function simpleFTCommitmentBatchTransfer(req, res, next) {
   let changeIndex;
-  let changeData = [{}];
+  let changeData = {};
+
+  const {
+    inputCommitments: [inputCommitment],
+    outputCommitments,
+  } = req.body;
+  let selectedCommitmentValue = Number(inputCommitment.value); // amount of selected commitment
 
   try {
     // Generate a new one-time-use Ethereum address for the sender to use
@@ -390,56 +367,51 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
     await db.updateUserWithPrivateAccount(req.user, {address, password});
     await accounts.unlockAccount({address, password});
 
-    // get logged in user's secretkey.
+    // get logged in user's secretKey.
     const user = await db.fetchUser(req.user);
-    req.body.senderSecretKey = user.secretkey;
 
-    const {amount, salt, commitment, commitmentIndex, transferData} = req.body;
-    let selectedCommitmentValue = Number(req.body.amount); // amount of selected commitment
-
-    for (const data of transferData) {
+    for (const data of outputCommitments) {
       /* eslint-disable no-await-in-loop */
-      data.receiverPublicKey = await offchain.getZkpPublicKeyFromName(data.receiverName); // fetch publicKey from PKD by passing username
+      data.receiver.publicKey = await offchain.getZkpPublicKeyFromName(data.receiver.name); // fetch pk from PKD by passing username
       selectedCommitmentValue -= Number(data.value);
     }
 
     if (selectedCommitmentValue < 0)
       throw new Error('Transfer value exceeds selected commitment amount');
 
-    for (let i = transferData.length; i < 20; i++) {
+    for (let i = outputCommitments.length; i < 20; i++) {
       if (selectedCommitmentValue) changeIndex = i; // array index where change amount is added
 
-      transferData[i] = {
+      outputCommitments[i] = {
         value: `0x${selectedCommitmentValue.toString(16).padStart(32, 0)}`,
-        receiverPublicKey: req.user.ownerPublicKey,
-        receiverName: req.user.name,
+        receiver: {
+          name: req.user.name,
+          publicKey: req.user.publicKey,
+        },
       };
       selectedCommitmentValue = 0;
     }
-
-    const {commitments, txReceipt} = await zkp.simpleFTCommitmentBatchTransfer({address}, req.body);
-    if (changeIndex) changeData = commitments.splice(changeIndex, 19);
+    const { outputCommitments: commitments, txReceipt } = await zkp.simpleFTCommitmentBatchTransfer(
+      { address },
+      {
+        inputCommitment,
+        outputCommitments,
+        sender: {
+          secretKey: user.secretKey,
+        },
+      },
+    );
     // update slected coin1 with tansferred data
-    await db.updateFTCommitmentByCommitmentHash(req.user, req.body.commitment, {
-      amount,
-      salt,
-      commitment,
-      commitmentIndex,
-      batchTransfer: commitments,
-      changeAmount: changeData[0].value,
-      changeSalt: changeData[0].salt,
-      changeCommitment: changeData[0].commitment,
-      changeCommitmentIndex: changeData[0].commitmentIndex,
+    await db.updateFTCommitmentByCommitmentHash(req.user, inputCommitment.commitment, {
       isBatchTransferred: true,
     });
 
     // add change to user database
     if (changeIndex) {
+      [changeData] = commitments.splice(changeIndex, 19);
+      changeData.owner = changeData.receiver;
       await db.insertFTCommitment(req.user, {
-        amount: changeData[0].value,
-        salt: changeData[0].salt,
-        commitment: changeData[0].commitment,
-        commitmentIndex: changeData[0].commitmentIndex,
+        outputCommitments: [changeData],
         isChange: true,
       });
     }
@@ -447,17 +419,26 @@ export async function simpleFTCommitmentBatchTransfer(req, res, next) {
     for (const data of commitments) {
       /* eslint-disable no-continue */
       if (!Number(data.value)) continue;
-      await whisperTransaction(req, {
-        amount: data.value,
-        salt: data.salt,
-        publicKey: data.receiverPublicKey,
-        commitment: data.commitment,
-        commitmentIndex: data.commitmentIndex,
+      data.owner = data.receiver;
+      await sendWhisperMessage(user.shhIdentity, {
+        outputCommitments: [data],
         blockNumber: txReceipt.receipt.blockNumber,
-        receiver: data.receiverName,
+        receiver: data.receiver,
+        sender: req.user,
+        isReceived: true,
         for: 'FTCommitment',
       });
     }
+
+    await db.insertFTCommitmentTransaction(req.user, {
+      inputCommitments: [inputCommitment],
+      outputCommitments: commitments,
+      sender: {
+        name: req.user.name,
+        publicKey: req.user.publicKey,
+      },
+      isBatchTransferred: true,
+    });
 
     res.data = commitments;
     next();

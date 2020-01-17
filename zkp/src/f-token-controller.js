@@ -13,13 +13,13 @@ import jsonfile from 'jsonfile';
 // eslint-disable-next-line import/extensions
 import zokrates from '@eyblockchain/zokrates.js';
 import fs from 'fs';
-import { merkleTree } from '@eyblockchain/nightlite';
+import {merkleTree} from '@eyblockchain/nightlite';
 import utils from './zkpUtils';
 import zkp from './f-token-zkp';
 import formatInputsForZkSnark from './format-inputs';
 import Element from './Element';
 import Web3 from './web3';
-import { getTruffleContractInstance } from './contractUtils';
+import {getTruffleContractInstance} from './contractUtils';
 
 const FTokenShield = contract(jsonfile.readFileSync('./build/contracts/FTokenShield.json'));
 FTokenShield.setProvider(Web3.connect());
@@ -152,12 +152,12 @@ async function getTokenInfo(address) {
   const fToken = await FToken.at(await fTokenShieldInstance.getFToken.call());
   const symbol = await fToken.symbol.call();
   const name = await fToken.name.call();
-  return { symbol, name };
+  return {symbol, name};
 }
 
 function gasUsedStats(txReceipt, functionName) {
   console.group(`\nGas used in ${functionName}:`);
-  const { gasUsed } = txReceipt.receipt;
+  const {gasUsed} = txReceipt.receipt;
   const gasUsedLog = txReceipt.logs.filter(log => {
     return log.event === 'GasUsed';
   });
@@ -187,7 +187,7 @@ function gasUsedStats(txReceipt, functionName) {
  * @returns {Number} commitmentIndex
  */
 async function mint(amount, ownerPublicKey, salt, vkId, blockchainOptions, zokratesOptions) {
-  const { fTokenShieldJson, fTokenShieldAddress } = blockchainOptions;
+  const {fTokenShieldJson, fTokenShieldAddress} = blockchainOptions;
   const account = utils.ensure0x(blockchainOptions.account);
 
   const {
@@ -266,7 +266,7 @@ async function mint(amount, ownerPublicKey, salt, vkId, blockchainOptions, zokra
     fileName: proofName,
   });
 
-  let { proof } = JSON.parse(fs.readFileSync(`${outputDirectory}/${proofName}`));
+  let {proof} = JSON.parse(fs.readFileSync(`${outputDirectory}/${proofName}`));
 
   proof = Object.values(proof);
   // convert to flattened array:
@@ -277,7 +277,7 @@ async function mint(amount, ownerPublicKey, salt, vkId, blockchainOptions, zokra
 
   // Approve fTokenShieldInstance to take tokens from minter's account.
   // TODO: Make this more generic, getTruffleContractInstance will not be part of nightfall-sdk.
-  const { contractInstance: fToken } = await getTruffleContractInstance('FToken');
+  const {contractInstance: fToken} = await getTruffleContractInstance('FToken');
   await fToken.approve(fTokenShieldInstance.address, parseInt(amount, 16), {
     from: account,
     gas: 4000000,
@@ -314,7 +314,7 @@ async function mint(amount, ownerPublicKey, salt, vkId, blockchainOptions, zokra
   console.log('Mint output: [zA, zAIndex]:', commitment, commitmentIndex.toString());
   console.log('MINT COMPLETE\n');
   console.groupEnd();
-  return { commitment, commitmentIndex };
+  return {commitment, commitmentIndex};
 }
 
 /**
@@ -340,7 +340,7 @@ async function transfer(
   blockchainOptions,
   zokratesOptions,
 ) {
-  const { fTokenShieldJson, fTokenShieldAddress } = blockchainOptions;
+  const {fTokenShieldJson, fTokenShieldAddress} = blockchainOptions;
   const account = utils.ensure0x(blockchainOptions.account);
 
   const {
@@ -403,13 +403,13 @@ async function transfer(
     account,
     fTokenShieldInstance,
     inputCommitments[0].commitment,
-    inputCommitments[0].index,
+    inputCommitments[0].commitmentIndex,
   );
   inputCommitments[1].siblingPath = await merkleTree.getSiblingPath(
     account,
     fTokenShieldInstance,
     inputCommitments[1].commitment,
-    inputCommitments[1].index,
+    inputCommitments[1].commitmentIndex,
   );
 
   // TODO: edit merkle-tree microservice API to accept 2 path requests at once, to avoid the possibility of the merkle-tree DB's root being updated between the 2 GET requests. Until then, we need to check that both paths share the same root with the below check:
@@ -420,13 +420,13 @@ async function transfer(
   // TODO: checkRoot() is not essential. It's only useful for debugging as we make iterative improvements to nightfall's zokrates files. Possibly delete in future.
   merkleTree.checkRoot(
     inputCommitments[0].commitment,
-    inputCommitments[0].index,
+    inputCommitments[0].commitmentIndex,
     inputCommitments[0].siblingPath,
     root,
   );
   merkleTree.checkRoot(
     inputCommitments[1].commitment,
-    inputCommitments[1].index,
+    inputCommitments[1].commitmentIndex,
     inputCommitments[1].siblingPath,
     root,
   );
@@ -537,8 +537,8 @@ async function transfer(
   console.log(`root: ${root} : ${utils.hexToFieldPreserve(root, p)}`);
   console.log(`inputCommitments[0].siblingPath:`, inputCommitments[0].siblingPath);
   console.log(`inputCommitments[1].siblingPath:`, inputCommitments[1].siblingPath);
-  console.log(`inputCommitments[0].index:`, inputCommitments[0].index);
-  console.log(`inputCommitments[1].index:`, inputCommitments[1].index);
+  console.log(`inputCommitments[0].commitmentIndex:`, inputCommitments[0].commitmentIndex);
+  console.log(`inputCommitments[1].commitmentIndex:`, inputCommitments[1].commitmentIndex);
   console.groupEnd();
 
   const publicInputHash = utils.concatenateThenHash(
@@ -564,11 +564,11 @@ async function transfer(
     new Element(senderSecretKey, 'field'),
     new Element(inputCommitments[0].salt, 'field'),
     ...inputCommitments[0].siblingPathElements.slice(1),
-    new Element(inputCommitments[0].index, 'field', 128, 1), // the binary decomposition of a leafIndex gives its path's 'left-right' positions up the tree. The decomposition is done inside the circuit.,
+    new Element(inputCommitments[0].commitmentIndex, 'field', 128, 1), // the binary decomposition of a leafIndex gives its path's 'left-right' positions up the tree. The decomposition is done inside the circuit.,
     new Element(inputCommitments[1].value, 'field', 128, 1),
     new Element(inputCommitments[1].salt, 'field'),
     ...inputCommitments[1].siblingPathElements.slice(1),
-    new Element(inputCommitments[1].index, 'field', 128, 1), // the binary decomposition of a leafIndex gives its path's 'left-right' positions up the tree. The decomposition is done inside the circuit.,
+    new Element(inputCommitments[1].commitmentIndex, 'field', 128, 1), // the binary decomposition of a leafIndex gives its path's 'left-right' positions up the tree. The decomposition is done inside the circuit.,
     new Element(inputCommitments[0].nullifier, 'field'),
     new Element(inputCommitments[1].nullifier, 'field'),
     new Element(outputCommitments[0].value, 'field', 128, 1),
@@ -595,7 +595,7 @@ async function transfer(
     fileName: proofName,
   });
 
-  let { proof } = JSON.parse(fs.readFileSync(`${outputDirectory}/${proofName}`));
+  let {proof} = JSON.parse(fs.readFileSync(`${outputDirectory}/${proofName}`));
 
   proof = Object.values(proof);
   // convert to flattened array:
@@ -637,9 +637,9 @@ async function transfer(
     return log.event === 'NewLeaves';
   });
   // eslint-disable-next-line no-param-reassign
-  outputCommitments[0].index = parseInt(newLeavesLog[0].args.minLeafIndex, 10);
+  outputCommitments[0].commitmentIndex = parseInt(newLeavesLog[0].args.minLeafIndex, 10);
   // eslint-disable-next-line no-param-reassign
-  outputCommitments[1].index = outputCommitments[0].index + 1;
+  outputCommitments[1].commitmentIndex = outputCommitments[0].commitmentIndex + 1;
   console.groupEnd();
 
   console.log('TRANSFER COMPLETE\n');
@@ -677,7 +677,7 @@ async function simpleFungibleBatchTransfer(
   blockchainOptions,
   zokratesOptions,
 ) {
-  const { fTokenShieldJson, fTokenShieldAddress } = blockchainOptions;
+  const {fTokenShieldJson, fTokenShieldAddress} = blockchainOptions;
   const account = utils.ensure0x(blockchainOptions.account);
 
   const {
@@ -734,14 +734,14 @@ async function simpleFungibleBatchTransfer(
     account,
     fTokenShieldInstance,
     inputCommitment.commitment,
-    inputCommitment.index,
+    inputCommitment.commitmentIndex,
   );
 
   const root = inputCommitment.siblingPath[0];
   // TODO: checkRoot() is not essential. It's only useful for debugging as we make iterative improvements to nightfall's zokrates files.  Although we only strictly need the root to be reconciled within zokrates, it's easier to check and intercept any errors in js; so we'll first try to reconcole here. Possibly delete in future.
   merkleTree.checkRoot(
     inputCommitment.commitment,
-    inputCommitment.index,
+    inputCommitment.commitmentIndex,
     inputCommitment.siblingPath,
     root,
   );
@@ -764,7 +764,7 @@ async function simpleFungibleBatchTransfer(
     new Element(senderSecretKey, 'field'),
     new Element(inputCommitment.salt, 'field'),
     ...inputCommitment.siblingPathElements.slice(1),
-    new Element(inputCommitment.index, 'field', 128, 1), // the binary decomposition of a leafIndex gives its path's 'left-right' positions up the tree. The decomposition is done inside the circuit.,,
+    new Element(inputCommitment.commitmentIndex, 'field', 128, 1), // the binary decomposition of a leafIndex gives its path's 'left-right' positions up the tree. The decomposition is done inside the circuit.,,
     new Element(inputCommitment.nullifier, 'field'),
     ...outputCommitments.map(item => new Element(item.value, 'field', 128, 1)),
     ...receiversPublicKeys.map(item => new Element(item, 'field')),
@@ -787,7 +787,7 @@ async function simpleFungibleBatchTransfer(
     fileName: proofName,
   });
 
-  let { proof } = JSON.parse(fs.readFileSync(`${outputDirectory}/${proofName}`));
+  let {proof} = JSON.parse(fs.readFileSync(`${outputDirectory}/${proofName}`));
 
   proof = Object.values(proof);
   // convert to flattened array:
@@ -833,8 +833,7 @@ async function simpleFungibleBatchTransfer(
   console.log('TRANSFER COMPLETE\n');
   console.groupEnd();
   return {
-    transferredCommitment: outputCommitments.map(item => item.commitment),
-    transferredCommitmentIndex: maxOutputCommitmentIndex,
+    maxOutputCommitmentIndex,
     txReceipt,
   };
 }
@@ -863,7 +862,7 @@ async function burn(
   blockchainOptions,
   zokratesOptions,
 ) {
-  const { fTokenShieldJson, fTokenShieldAddress, tokenReceiver: _payTo } = blockchainOptions;
+  const {fTokenShieldJson, fTokenShieldAddress, tokenReceiver: _payTo} = blockchainOptions;
 
   const account = utils.ensure0x(blockchainOptions.account);
 
@@ -969,7 +968,7 @@ async function burn(
     fileName: proofName,
   });
 
-  let { proof } = JSON.parse(fs.readFileSync(`${outputDirectory}/${proofName}`));
+  let {proof} = JSON.parse(fs.readFileSync(`${outputDirectory}/${proofName}`));
 
   proof = Object.values(proof);
   // convert to flattened array:
@@ -1011,7 +1010,7 @@ async function burn(
   console.log('BURN COMPLETE\n');
   console.groupEnd();
 
-  return { z_C: commitment, z_C_index: commitmentIndex, txReceipt };
+  return {z_C: commitment, z_C_index: commitmentIndex, txReceipt};
 }
 
 async function checkCorrectness(

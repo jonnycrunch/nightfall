@@ -32,7 +32,7 @@ export async function whisperTransaction(req, dataToSend) {
   const shhPkReceiver = await offchain.getWhisperPK(receiverName);
   const details = {
     message: dataToSend,
-    shhIdentity: user.shh_identity,
+    shhIdentity: user.shhIdentity,
     shhPkReceiver,
   };
   await offchain.sendMessage(details);

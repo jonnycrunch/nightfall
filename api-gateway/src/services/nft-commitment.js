@@ -6,7 +6,7 @@ import {accounts, db, offchain, zkp} from '../rest';
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    publicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.body {
@@ -36,7 +36,7 @@ export async function insertNFTCommitmentToDb(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    publicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.query {
@@ -61,7 +61,7 @@ export async function getNFTCommitments(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    publicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.query {
@@ -95,7 +95,7 @@ export async function checkCorrectnessForNFTCommitment(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    publicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
  }
  * req.body {
@@ -112,10 +112,7 @@ export async function mintToken(req, res, next) {
   const {
     outputCommitments: [outputCommitment],
   } = req.body;
-  outputCommitment.owner = {
-    name: req.user.name,
-    publicKey: req.user.ownerPublicKey,
-  };
+  outputCommitment.owner = req.user;
   try {
     // mint a private 'token commitment' within the shield contract to represent the public NFToken with the specified tokenId
     const data = await zkp.mintToken(req.user, outputCommitment);
@@ -149,7 +146,7 @@ export async function mintToken(req, res, next) {
  * req.user {
     address: '0x04b95c76d5075620a655b707a7901462aea8656d',
     name: 'alice',
-    ownerPublicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
+    publicKey: '0x4c45963a12f0dfa530285fde66ac235c8f8ddf8d178098cdb292ac',
     password: 'alicesPassword'
   }
  * req.body {
@@ -181,7 +178,7 @@ export async function transferToken(req, res, next) {
     await db.updateUserWithPrivateAccount(req.user, {address, password});
     await accounts.unlockAccount({address, password});
 
-    // get logged in user's secretkey.
+    // get logged in user's secretKey.
     const user = await db.fetchUser(req.user);
 
     // Fetch the receiver's publicKey from the PKD by passing their username
@@ -195,7 +192,7 @@ export async function transferToken(req, res, next) {
       {
         ...inputCommitment,
         sender: {
-          secretKey: user.secretkey,
+          secretKey: user.secretKey,
         },
         receiverPublicKey,
       },
@@ -237,7 +234,7 @@ export async function transferToken(req, res, next) {
  * req.user {
     address: '0x7d6ca0d3d9246686626dd5b59f5bbd323cbcb15b',
     name: 'bob',
-    ownerPublicKey: '0xebbabcc471780d9581451e1b2f03bb54638800dd441d1e5c2344f8',
+    publicKey: '0xebbabcc471780d9581451e1b2f03bb54638800dd441d1e5c2344f8',
     password: 'bobsPassword'
   }
  * req.body {
@@ -272,7 +269,7 @@ export async function burnToken(req, res, next) {
     res.data = await zkp.burnToken(req.user, {
       ...inputCommitment,
       sender: {
-        secretKey: user.secretkey,
+        secretKey: user.secretKey,
       },
       receiver,
     });
