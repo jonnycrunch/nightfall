@@ -1,4 +1,4 @@
-import { Schema } from 'mongoose';
+import {Schema} from 'mongoose';
 
 export default new Schema(
   {
@@ -45,5 +45,5 @@ export default new Schema(
     token_commitment_reconciles: Boolean, // for a given A, pk, S and z, do we have that h(A,pk,S)=z?
     token_commitment_exists_onchain: Boolean, // does z exist on-chain?
   },
-  { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
+  {timestamps: {createdAt: 'created_at', updatedAt: 'updated_at'}},
 );

@@ -18,10 +18,10 @@ async function insertNFTToDb(data, userData) {
   );
 }
 
-async function insertFTTransactionToDb(data, { jwtToken }) {
+async function insertFTTransactionToDb(data, {jwtToken}) {
   console.log('\noffchain/src/listeners.js', 'insertFTTransactionToDb', '\ndata', data);
 
-  await apiGateway.insertFTTransactionToDb({ authorization: jwtToken }, data);
+  await apiGateway.insertFTTransactionToDb({authorization: jwtToken}, data);
 }
 
 async function insertNFTCommitmentToDb(data, userData) {
@@ -35,7 +35,7 @@ async function insertNFTCommitmentToDb(data, userData) {
   );
 
   const {
-    tokenUri,
+    tokenURI,
     tokenId,
     salt,
     receiverPublicKey,
@@ -70,7 +70,7 @@ async function insertNFTCommitmentToDb(data, userData) {
       authorization: userData.jwtToken,
     },
     {
-      tokenUri,
+      tokenURI,
       tokenId,
       salt,
       commitment,
@@ -92,7 +92,7 @@ async function insertFTCommitmentToDb(data, userData) {
     userData,
   );
 
-  const { amount, salt, publicKey, commitment, commitmentIndex, blockNumber } = data;
+  const {amount, salt, publicKey, commitment, commitmentIndex, blockNumber} = data;
 
   const correctnessChecks = await apiGateway.checkCorrectnessForFTCommitment(
     {

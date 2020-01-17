@@ -97,7 +97,7 @@ export default class NftCommitmentBurnComponent implements OnInit, AfterContentI
       selectedCommitment.salt,
       selectedCommitment.token_commitment,
       selectedCommitment.token_commitment_index,
-      this.receiverName
+      this.receiverName,
     ).subscribe( data => {
         this.isRequesting = false;
         this.toastr.success('Token burned successfully.');

@@ -1,15 +1,18 @@
 /* eslint-disable camelcase */
 
-import { Router } from 'express';
+import {Router} from 'express';
 import utils from '../zkpUtils';
 import nfController from '../nf-token-controller';
-import { getVkId, getTruffleContractInstance } from '../contractUtils';
+import {getVkId, getTruffleContractInstance} from '../contractUtils';
 
 const router = Router();
 
 async function mint(req, res, next) {
-  const { address } = req.headers;
-  const { tokenId, ownerPublicKey } = req.body;
+  const {address} = req.headers;
+  const {
+    tokenId,
+    owner: {publicKey: ownerPublicKey},
+  } = req.body;
   const salt = await utils.rndHex(32);
   const vkId = await getVkId('MintNFToken');
   const {
@@ -18,7 +21,7 @@ async function mint(req, res, next) {
   } = await getTruffleContractInstance('NFTokenShield');
 
   try {
-    const { commitment, commitmentIndex } = await nfController.mint(
+    const {commitment, commitmentIndex} = await nfController.mint(
       tokenId,
       ownerPublicKey,
       salt,
@@ -50,13 +53,13 @@ async function transfer(req, res, next) {
   const {
     tokenId,
     receiverPublicKey,
-    originalCommitmentSalt,
-    senderSecretKey,
+    salt: originalCommitmentSalt,
+    sender: {secretKey: senderSecretKey},
     commitment,
     commitmentIndex,
   } = req.body;
   const newCommitmentSalt = await utils.rndHex(32);
-  const { address } = req.headers;
+  const {address} = req.headers;
   const vkId = await getVkId('TransferNFToken');
   const {
     contractJson: nfTokenShieldJson,
@@ -64,7 +67,7 @@ async function transfer(req, res, next) {
   } = await getTruffleContractInstance('NFTokenShield');
 
   try {
-    const { outputCommitment, outputCommitmentIndex, txReceipt } = await nfController.transfer(
+    const {outputCommitment, outputCommitmentIndex, txReceipt} = await nfController.transfer(
       tokenId,
       receiverPublicKey,
       originalCommitmentSalt,
@@ -85,9 +88,9 @@ async function transfer(req, res, next) {
       },
     );
     res.data = {
-      transferredCommitment: outputCommitment,
-      transferredCommitmentIndex: outputCommitmentIndex,
-      transferredSalt: newCommitmentSalt,
+      commitment: outputCommitment,
+      commitmentIndex: outputCommitmentIndex,
+      salt: newCommitmentSalt,
       txReceipt,
     };
     next();
@@ -97,9 +100,15 @@ async function transfer(req, res, next) {
 }
 
 async function burn(req, res, next) {
-  console.log(`****************Inside zkp nft-commitment.js ${JSON.stringify(req.body)}`);
-  const { tokenId, salt, secretKey, commitment, commitmentIndex, tokenReceiver } = req.body;
-  const { address } = req.headers;
+  const {
+    tokenId,
+    salt,
+    sender: {secretKey},
+    commitment,
+    commitmentIndex,
+    receiver: {address: tokenReceiver},
+  } = req.body;
+  const {address} = req.headers;
   const vkId = await getVkId('BurnNFToken');
   const {
     contractJson: nfTokenShieldJson,
@@ -107,7 +116,7 @@ async function burn(req, res, next) {
   } = await getTruffleContractInstance('NFTokenShield');
 
   try {
-    const { txReceipt } = await nfController.burn(
+    const {txReceipt} = await nfController.burn(
       tokenId,
       secretKey,
       salt,
@@ -140,8 +149,8 @@ async function checkCorrectness(req, res, next) {
   console.log('\nzkp/src/routes/nft-commitment', '\n/checkCorrectness', '\nreq.body', req.body);
 
   try {
-    const { address } = req.headers;
-    const { tokenId, ownerPublicKey, salt, commitment, commitmentIndex, blockNumber } = req.body;
+    const {address} = req.headers;
+    const {tokenId, ownerPublicKey, salt, commitment, commitmentIndex, blockNumber} = req.body;
 
     const results = await nfController.checkCorrectness(
       tokenId,
@@ -160,8 +169,8 @@ async function checkCorrectness(req, res, next) {
 }
 
 async function setNFTCommitmentShieldAddress(req, res, next) {
-  const { address } = req.headers;
-  const { tokenShield } = req.body;
+  const {address} = req.headers;
+  const {tokenShield} = req.body;
 
   try {
     await nfController.setShield(tokenShield, address);
@@ -176,7 +185,7 @@ async function setNFTCommitmentShieldAddress(req, res, next) {
 }
 
 async function getNFTCommitmentShieldAddress(req, res, next) {
-  const { address } = req.headers;
+  const {address} = req.headers;
 
   try {
     const shieldAddress = await nfController.getShieldAddress(address);
@@ -192,7 +201,7 @@ async function getNFTCommitmentShieldAddress(req, res, next) {
 }
 
 async function unsetNFTCommitmentShieldAddress(req, res, next) {
-  const { address } = req.headers;
+  const {address} = req.headers;
 
   try {
     nfController.unSetShield(address);

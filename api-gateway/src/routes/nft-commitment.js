@@ -25,9 +25,11 @@ router.route('/checkCorrectnessForNFTCommitment').post(checkCorrectnessForNFTCom
  *
  * @apiExample {js} Example usage:
  * const data = {
- *    salt: '0xE9A313C89C449AF6E630C25AB3ACC0FC3BAB821638E0D55599B518',
- *    tokenURI: 'unique token name',
- *    tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000'
+ *    outputCommitments: [{
+ *      shieldContractAddress: '0xE9A313C89C449AF6E630C25AB3ACC0FC3BAB821638E0D55599B518',
+ *      tokenURI: 'unique token name',
+ *      tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000'
+ *    }]
  * }
  *
  * $http.post(url, data)
@@ -52,41 +54,39 @@ router.route('/mintNFTCommitment').post(mintToken);
  * @apiName  Transfer a ERC-721 commitment
  * @apiGroup ERC-721 commitment
  *
- * @apiParam (Request body) {String} tokenId Hex String of non fungible token to transfer.
- * @apiParam (Request body) {String} tokenURI URI of the non fungible token.
- * @apiParam (Request body) {String} salt Salt of the non fungible token.
- * @apiParam (Request body) {String} transferredSalt Random generated Salt.
- * @apiParam (Request body) {String} senderSecretKey Secret key of Transferror (Alice).
- * @apiParam (Request body) {String} receiverPublicKey Public key of Receiver (Bob).
- * @apiParam (Request body) {String} commitment Token commitment of the non fungible token.
- * @apiParam (Request body) {String} commitmentIndex Token index of the non fungible token.
- * @apiParam (Request body) {String} receiver Receiver name.
+ * @apiParam (Request body) {Object} inputCommitments selected commitments.
+ * @apiParam (Request body) {Object} outputCommitments Hex String of value.
+ * @apiParam (Request body) {Object} receiver Object with Receiver name.
  *
  * @apiExample {js} Example usage:
  * const data = {
+ *    inputCommitments: [
+ *    {
  *    tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
  *    tokenURI: 'unique token name',
  *    salt: '0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518',
- *    transferredSalt: '0xF4C7028D78D140333A36381540E70E6210895A994429FB0483FB91',
- *    senderSecretKey: '0xcf6267b9393a8187ab72bf095e9ffc34af1a5d3d069b9d26e21eac',
  *    commitment: '0xca2c0c099289896be4d72c74f801bed6e4b2cd5297bfcf29325484',
- *    receiver: 'bob',
  *    commitmentIndex: 0,
- *    receiverPublicKey: '0xebbabcc471780d9581451e1b2f03bb54638800dd441d1e5c2344f8'
+ *    }],
+ *    receiver: {
+ *      name: 'bob',
+ *    }
  * }
  *
  * $http.post(url, data)
  *   .success((res, status) => doSomethingHere())
  *   .error((err, status) => doSomethingHere());
  *
- * @apiSuccess (Success 200) {String} transferredCommitment Token commitment number.
- * @apiSuccess (Success 200) {Number} transferredCommitmentIndex token index value from blockchain.
+ * @apiSuccess (Success 200) {String} commitment Token commitment number.
+ * @apiSuccess (Success 200) {Number} commitmentIndex token index value from blockchain.
  *
  * @apiSuccessExample {json} Success response:
  *     HTTPS 200 OK
  *	  {
- *		"transferredCommitment":"0x5b531cd1a758cf33affd093fcdb3864bfa72f7717f593a8d7d0118",
- *		"transferredCommitmentIndex":"1"
+ *		"commitment":"0x5b531cd1a758cf33affd093fcdb3864bfa72f7717f593a8d7d0118",
+ *		"commitmentIndex":"1",
+ *    "salt": "0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518",
+ *    "txReceipt": "0xcf6267b9393a8187ab72bf095e9ffc34af1a5d3d069b9d26e210ac",
  *	  }
  */
 router.route('/transferNFTCommitment').post(transferToken);
@@ -103,15 +103,22 @@ router.route('/transferNFTCommitment').post(transferToken);
  * @apiParam (Request body) {String} senderSecretKey Secret key of Transferror (Alice).
  * @apiParam (Request body) {String} commitment Token commitment of the non fungible token.
  * @apiParam (Request body) {String} commitmentIndex Token index of the non fungible token.
+ * @apiParam (Request body) {String} reciever Reciever name of the non fungible token.
  *
  * @apiExample {js} Example usage:
  * const data = {
- *    tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
- *    tokenURI: 'unique token name',
- *    salt: '0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518',
- *    senderSecretKey: '0xcf6267b9393a8187ab72bf095e9ffc34af1a5d3d069b9d26e21eac',
- *    commitment: '0xca2c0c099289896be4d72c74f801bed6e4b2cd5297bfcf29325484',
- *    commitmentIndex: 0,
+ *    inputCommitments: [
+ *    {
+ *      tokenId: '0x1448d8ab4e0d610000000000000000000000000000000000000000000000000',
+ *      tokenURI: 'unique token name',
+ *      salt: '0xe9a313c89c449af6e630c25ab3acc0fc3bab821638e0d55599b518',
+ *      senderSecretKey: '0xcf6267b9393a8187ab72bf095e9ffc34af1a5d3d069b9d26e21eac',
+ *      commitment: '0xca2c0c099289896be4d72c74f801bed6e4b2cd5297bfcf29325484',
+ *      commitmentIndex: 0,
+ *    }],
+ *   receiver: {
+ *      name: 'bob',
+ *   },
  * }
  *
  * $http.post(url, data)

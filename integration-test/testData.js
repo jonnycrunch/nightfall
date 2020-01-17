@@ -46,8 +46,8 @@ export default {
     return {
       tokenURI: erc721.tokenURI,
       tokenId: erc721.tokenId,
-      mintCommitmentIndex: '0',
-      transferCommitmentIndex: '1',
+      mintCommitmentIndex: 0,
+      transferCommitmentIndex: 1,
 
       // commitment while mint
       get mintCommitment() {

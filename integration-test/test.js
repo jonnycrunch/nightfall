@@ -152,7 +152,7 @@ describe('****** Integration Test ******\n', function() {
         request
           .post('/mintNFTCommitment')
           .use(prefix(apiServerURL))
-          .send(erc721Commitment)
+          .send({outputCommitments: [erc721Commitment]})
           .set('Accept', 'application/json')
           .set('Authorization', alice.token)
           .end((err, res) => {
@@ -177,28 +177,31 @@ describe('****** Integration Test ******\n', function() {
           .post('/transferNFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            tokenId: erc721Commitment.tokenId,
-            uri: erc721Commitment.uri,
-            salt: erc721Commitment.salt,
-            transferredSalt: erc721Commitment.transferredSalt,
-            commitment: erc721Commitment.mintCommitment,
-            receiver: bob.name,
-            commitmentIndex: erc721Commitment.mintCommitmentIndex,
+            inputCommitments: [
+              {
+                tokenId: erc721Commitment.tokenId,
+                tokenURI: erc721Commitment.tokenURI,
+                salt: erc721Commitment.salt,
+                commitment: erc721Commitment.mintCommitment,
+                commitmentIndex: erc721Commitment.mintCommitmentIndex,
+              },
+            ],
+            receiver: {
+              name: bob.name,
+            },
           })
           .set('Accept', 'application/json')
           .set('Authorization', alice.token)
           .end((err, res) => {
             if (err) return done(err);
-            expect(res).to.have.nested.property('body.data.transferredSalt');
-            expect(res).to.have.nested.property('body.data.transferredCommitment');
-            expect(res).to.have.nested.property('body.data.transferredCommitmentIndex');
+            expect(res).to.have.nested.property('body.data.salt');
+            expect(res).to.have.nested.property('body.data.commitment');
+            expect(res).to.have.nested.property('body.data.commitmentIndex');
 
-            erc721Commitment.transferredSalt = res.body.data.transferredSalt; // set Salt from response to calculate and verify commitment.
+            erc721Commitment.transferredSalt = res.body.data.salt; // set Salt from response to calculate and verify commitment.
 
-            expect(res.body.data.transferredCommitment).to.be.equal(
-              erc721Commitment.transferCommitment,
-            );
-            expect(res.body.data.transferredCommitmentIndex).to.be.equal(
+            expect(res.body.data.commitment).to.be.equal(erc721Commitment.transferCommitment);
+            expect(res.body.data.commitmentIndex).to.be.equal(
               erc721Commitment.transferCommitmentIndex,
             );
             return done();
@@ -219,11 +222,10 @@ describe('****** Integration Test ******\n', function() {
           .post('/burnNFTCommitment')
           .use(prefix(apiServerURL))
           .send({
-            tokenId: erc721Commitment.tokenId,
-            uri: erc721Commitment.tokenURI,
-            salt: erc721Commitment.transferredSalt,
-            commitment: erc721Commitment.transferCommitment,
-            commitmentIndex: erc721Commitment.transferCommitmentIndex,
+            inputCommitments: [erc721Commitment],
+            receiver: {
+              name: bob.name,
+            },
           })
           .set('Accept', 'application/json')
           .set('Authorization', bob.token)
